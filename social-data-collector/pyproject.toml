@@ -1,0 +1,72 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "social-data-collector"
+version = "0.1.0"
+description = "Phase 1 data collector for the Social Intelligence Platform."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Proprietary" }
+authors = [{ name = "GHN Platform Team" }]
+dependencies = [
+    "social-common",
+    "pydantic>=2.6,<3.0",
+    "pydantic-settings>=2.2",
+    "httpx>=0.27",
+    "sqlalchemy>=2.0",
+    "psycopg[binary]>=3.1",
+    "alembic>=1.13",
+    "celery>=5.4",
+    "redis>=5.0",
+    "structlog>=24.1",
+    "tenacity>=8.2",
+    "python-dotenv>=1.0",
+    "cryptography>=41.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "respx>=0.21",
+    "ruff>=0.5",
+    "mypy>=1.10",
+    "freezegun>=1.4",
+]
+
+[project.scripts]
+social-data-collector = "social_data_collector.__main__:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/social_data_collector"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP", "B", "C4", "RET", "SIM"]
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+"tests/**/*.py" = ["B011"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra -q"
+pythonpath = ["src"]
+markers = [
+    "integration: live external API integration tests (set RUN_INTEGRATION=1 to run)",
+]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+files = ["src"]
+
+[[tool.mypy.overrides]]
+module = "celery.*"
+ignore_missing_imports = true

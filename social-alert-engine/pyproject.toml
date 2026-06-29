@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "social-alert-engine"
+version = "0.1.0"
+description = "Alert evaluation and Telegram notification worker"
+requires-python = ">=3.11"
+dependencies = [
+  "social-common",
+  "celery>=5.4,<6",
+  "httpx>=0.27,<1",
+  "psycopg[binary]>=3.1,<4",
+  "pydantic-settings>=2.3,<3",
+  "redis>=5,<6",
+  "SQLAlchemy>=2.0,<3",
+  "structlog>=24.1,<25",
+]
+
+[project.optional-dependencies]
+dev = [
+  "mypy>=1.10",
+  "pytest>=8",
+  "ruff>=0.5",
+]
+
+[project.scripts]
+social-alert-engine = "social_alert_engine.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

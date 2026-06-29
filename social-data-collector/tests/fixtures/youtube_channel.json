@@ -1,0 +1,22 @@
+{
+  "items": [
+    {
+      "id": "UC_x5XG1OV2P6uZZ5FSM9Ttw",
+      "snippet": {
+        "title": "Example Channel",
+        "description": "A test channel"
+      },
+      "statistics": {
+        "viewCount": "1000000",
+        "subscriberCount": "50000",
+        "hiddenSubscriberCount": false,
+        "videoCount": "120"
+      },
+      "contentDetails": {
+        "relatedPlaylists": {
+          "uploads": "UU_x5XG1OV2P6uZZ5FSM9Ttw"
+        }
+      }
+    }
+  ]
+}

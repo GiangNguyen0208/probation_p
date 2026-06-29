@@ -1,0 +1,1764 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Social Intelligence Platform API",
+    "description": "Public REST API for the Social Intelligence Platform. All endpoints require a valid API key. Internal keys have higher rate limits and (in Sprint 2) access to write endpoints; external keys are read-only and rate-limited.",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/v1/health": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Health check",
+        "description": "Liveness and dependency check. Returns 200 with `status: ok` when the database is reachable, `degraded` otherwise. The Redis check is included but does not affect the overall status because the cache falls back gracefully to the database on Redis errors.",
+        "operationId": "health_v1_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Health V1 Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/subjects": {
+      "get": {
+        "tags": [
+          "subjects"
+        ],
+        "summary": "List subjects",
+        "description": "List monitored subjects with optional filters and pagination. Sorted by `last_synced_at` descending. Cached for `CACHE_LIST_TTL_SECONDS` (default 60s).",
+        "operationId": "list_subjects_v1_subjects_get",
+        "parameters": [
+          {
+            "name": "platform",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Platform"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by platform: `facebook` or `youtube`.",
+              "title": "Platform"
+            },
+            "description": "Filter by platform: `facebook` or `youtube`."
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/SubjectStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by status: `active`, `inactive`, or `suspended`.",
+              "title": "Status"
+            },
+            "description": "Filter by status: `active`, `inactive`, or `suspended`."
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Case-insensitive search on name or platform_id.",
+              "title": "Q"
+            },
+            "description": "Case-insensitive search on name or platform_id."
+          },
+          {
+            "name": "last_synced_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Include only subjects with `last_synced_at >=` this timestamp (ISO 8601).",
+              "title": "Last Synced From"
+            },
+            "description": "Include only subjects with `last_synced_at >=` this timestamp (ISO 8601)."
+          },
+          {
+            "name": "last_synced_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Include only subjects with `last_synced_at <=` this timestamp (ISO 8601).",
+              "title": "Last Synced To"
+            },
+            "description": "Include only subjects with `last_synced_at <=` this timestamp (ISO 8601)."
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "1-indexed page number.",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "1-indexed page number."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Items per page (max 100).",
+              "default": 20,
+              "title": "Limit"
+            },
+            "description": "Items per page (max 100)."
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseEnvelope_list_Subject__"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key"
+          },
+          "422": {
+            "description": "Invalid query parameters"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          }
+        }
+      }
+    },
+    "/v1/subjects/{subject_id}": {
+      "get": {
+        "tags": [
+          "subjects"
+        ],
+        "summary": "Get a single subject",
+        "description": "Fetch a single subject by its system-generated UUID.",
+        "operationId": "get_subject_v1_subjects__subject_id__get",
+        "parameters": [
+          {
+            "name": "subject_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Subject Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseEnvelope_Subject_"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key"
+          },
+          "404": {
+            "description": "Subject not found"
+          },
+          "422": {
+            "description": "Invalid UUID"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          }
+        }
+      }
+    },
+    "/v1/subjects/{subject_id}/activity": {
+      "get": {
+        "tags": [
+          "subjects"
+        ],
+        "summary": "Get activity time-series for a subject",
+        "description": "Return historical activity snapshots for a subject, newest first. Optional `from` and `to` ISO 8601 timestamps bound the time range. Capped at `limit` rows (default 1000, max 10000).",
+        "operationId": "get_activity_v1_subjects__subject_id__activity_get",
+        "parameters": [
+          {
+            "name": "subject_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Subject Id"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Lower bound on `captured_at` (ISO 8601).",
+              "title": "From"
+            },
+            "description": "Lower bound on `captured_at` (ISO 8601)."
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Upper bound on `captured_at` (ISO 8601).",
+              "title": "To"
+            },
+            "description": "Upper bound on `captured_at` (ISO 8601)."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 10000,
+              "minimum": 1,
+              "description": "Max snapshots to return.",
+              "default": 1000,
+              "title": "Limit"
+            },
+            "description": "Max snapshots to return."
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseEnvelope_list_ActivitySnapshot__"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key"
+          },
+          "404": {
+            "description": "Subject not found"
+          },
+          "422": {
+            "description": "Invalid UUID or timestamps"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          }
+        }
+      }
+    },
+    "/v1/subjects/{subject_id}/sync": {
+      "post": {
+        "tags": [
+          "subjects"
+        ],
+        "summary": "Trigger on-demand sync for a subject",
+        "description": "Enqueue a background task to sync data for this subject.",
+        "operationId": "trigger_sync_v1_subjects__subject_id__sync_post",
+        "parameters": [
+          {
+            "name": "subject_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Subject Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Trigger Sync V1 Subjects  Subject Id  Sync Post"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key"
+          },
+          "404": {
+            "description": "Subject not found"
+          },
+          "422": {
+            "description": "Invalid UUID"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          }
+        }
+      }
+    },
+    "/v1/subjects/{subject_id}/videos": {
+      "get": {
+        "tags": [
+          "subjects"
+        ],
+        "summary": "List videos for a subject",
+        "description": "Return tracked videos for a YouTube subject, newest first. Each video includes the latest observed metrics (views, likes, comments). Capped at `limit` rows (default 50, max 100).",
+        "operationId": "list_videos_v1_subjects__subject_id__videos_get",
+        "parameters": [
+          {
+            "name": "subject_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Subject Id"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "1-indexed page number.",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "1-indexed page number."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Items per page.",
+              "default": 50,
+              "title": "Limit"
+            },
+            "description": "Items per page."
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseEnvelope_list_Video__"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key"
+          },
+          "404": {
+            "description": "Subject not found"
+          },
+          "422": {
+            "description": "Invalid UUID"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          }
+        }
+      }
+    },
+    "/v1/subjects/{subject_id}/alerts": {
+      "get": {
+        "tags": [
+          "alerts"
+        ],
+        "summary": "List alert rules for a subject",
+        "description": "Return all alert rules for a subject, newest first. Supports `active_only` filter and pagination.",
+        "operationId": "list_alerts_v1_subjects__subject_id__alerts_get",
+        "parameters": [
+          {
+            "name": "subject_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Subject Id"
+            }
+          },
+          {
+            "name": "active_only",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Only return active rules.",
+              "default": false,
+              "title": "Active Only"
+            },
+            "description": "Only return active rules."
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "1-indexed page number.",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "1-indexed page number."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Items per page (max 100).",
+              "default": 20,
+              "title": "Limit"
+            },
+            "description": "Items per page (max 100)."
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseEnvelope_list_AlertRule__"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key"
+          },
+          "404": {
+            "description": "Subject not found"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "alerts"
+        ],
+        "summary": "Create an alert rule for a subject",
+        "description": "Create a new alert rule. Requires an internal API key.",
+        "operationId": "create_alert_v1_subjects__subject_id__alerts_post",
+        "parameters": [
+          {
+            "name": "subject_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Subject Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlertRuleCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseEnvelope_AlertRule_"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key"
+          },
+          "403": {
+            "description": "Internal API key required"
+          },
+          "404": {
+            "description": "Subject not found"
+          },
+          "422": {
+            "description": "Invalid request body"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          }
+        }
+      }
+    },
+    "/v1/alerts/{rule_id}": {
+      "put": {
+        "tags": [
+          "alerts"
+        ],
+        "summary": "Update an alert rule",
+        "description": "Update an existing alert rule. Requires an internal API key.",
+        "operationId": "update_alert_v1_alerts__rule_id__put",
+        "parameters": [
+          {
+            "name": "rule_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Rule Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlertRuleUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseEnvelope_AlertRule_"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key"
+          },
+          "403": {
+            "description": "Internal API key required"
+          },
+          "404": {
+            "description": "Rule not found"
+          },
+          "422": {
+            "description": "Invalid request body"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "alerts"
+        ],
+        "summary": "Delete an alert rule",
+        "description": "Delete an alert rule. Requires an internal API key.",
+        "operationId": "delete_alert_v1_alerts__rule_id__delete",
+        "parameters": [
+          {
+            "name": "rule_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Rule Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Missing or invalid API key"
+          },
+          "403": {
+            "description": "Internal API key required"
+          },
+          "404": {
+            "description": "Rule not found"
+          },
+          "429": {
+            "description": "Rate limit exceeded"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/keys": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Create a new API key",
+        "description": "Create a new API key. Returns the raw key exactly once in the response - the server only retains the hash. Requires the admin token in the `Authorization: Bearer <ADMIN_TOKEN>` header. This endpoint does not require or use a regular X-API-Key.",
+        "operationId": "create_api_key_v1_admin_keys_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateKeyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Key created. The `api_key` field in `data` is the raw key, shown once.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseEnvelope_CreateKeyData_"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing admin token"
+          },
+          "403": {
+            "description": "Invalid admin token"
+          },
+          "422": {
+            "description": "Invalid request body"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          },
+          {
+            "AdminAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "APIKeyTier": {
+        "type": "string",
+        "enum": [
+          "internal",
+          "external_default",
+          "external_elevated"
+        ],
+        "title": "APIKeyTier",
+        "description": "API key tier. Controls rate limits and (in Sprint 2) write access."
+      },
+      "ActivitySnapshot": {
+        "properties": {
+          "subject_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Subject Id"
+          },
+          "captured_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Captured At"
+          },
+          "followers": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Followers"
+          },
+          "post_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Post Count"
+          },
+          "frequency": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Frequency"
+          }
+        },
+        "type": "object",
+        "required": [
+          "subject_id",
+          "captured_at",
+          "followers",
+          "post_count",
+          "frequency"
+        ],
+        "title": "ActivitySnapshot",
+        "description": "Point-in-time metrics for a subject, stored as a time-series row.\n\nAppended to the time-series store on every successful sync. Used by\nthe Mini App for trend charts."
+      },
+      "AlertRule": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "subject_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Subject Id"
+          },
+          "rule_type": {
+            "$ref": "#/components/schemas/AlertRuleType"
+          },
+          "threshold": {
+            "type": "number",
+            "title": "Threshold"
+          },
+          "cooldown_seconds": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Cooldown Seconds"
+          },
+          "channel_id": {
+            "type": "string",
+            "title": "Channel Id"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "default": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "subject_id",
+          "rule_type",
+          "threshold",
+          "cooldown_seconds",
+          "channel_id"
+        ],
+        "title": "AlertRule",
+        "description": "Configurable alert condition scoped to one subject.\n\nCreated and updated by analysts through the Mini App; evaluated by\nthe alert engine on each sync cycle. Phase 1 defines the contract\nand table; the engine itself ships in Phase 4."
+      },
+      "AlertRuleCreate": {
+        "properties": {
+          "rule_type": {
+            "$ref": "#/components/schemas/AlertRuleType"
+          },
+          "threshold": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Threshold"
+          },
+          "cooldown_seconds": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Cooldown Seconds",
+            "default": 3600
+          },
+          "channel_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Channel Id",
+            "default": "channel_id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rule_type",
+          "threshold"
+        ],
+        "title": "AlertRuleCreate"
+      },
+      "AlertRuleType": {
+        "type": "string",
+        "enum": [
+          "follower_spike",
+          "follower_drop",
+          "activity_spike",
+          "activity_silence",
+          "status_change"
+        ],
+        "title": "AlertRuleType",
+        "description": "Type of alert condition evaluated by the alert engine."
+      },
+      "AlertRuleUpdate": {
+        "properties": {
+          "rule_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AlertRuleType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "threshold": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Threshold"
+          },
+          "cooldown_seconds": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cooldown Seconds"
+          },
+          "channel_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Channel Id"
+          },
+          "is_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Active"
+          }
+        },
+        "type": "object",
+        "title": "AlertRuleUpdate"
+      },
+      "CreateKeyData": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "tier": {
+            "$ref": "#/components/schemas/APIKeyTier"
+          },
+          "key_prefix": {
+            "type": "string",
+            "title": "Key Prefix"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "api_key": {
+            "type": "string",
+            "title": "Api Key"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "tier",
+          "key_prefix",
+          "created_at",
+          "api_key"
+        ],
+        "title": "CreateKeyData",
+        "description": "Response body for a newly-created API key.\n\nThe `api_key` field is the only place the raw key will ever appear.\nSave it immediately - the server cannot recover it later."
+      },
+      "CreateKeyRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Name",
+            "description": "Human-readable label for the key (e.g. 'Mini App Prod')."
+          },
+          "tier": {
+            "$ref": "#/components/schemas/APIKeyTier",
+            "description": "Tier: `internal`, `external_default`, or `external_elevated`."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "tier"
+        ],
+        "title": "CreateKeyRequest",
+        "description": "Request body for creating a new API key."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "Platform": {
+        "type": "string",
+        "enum": [
+          "facebook",
+          "youtube"
+        ],
+        "title": "Platform",
+        "description": "Source platform for a subject. Extensible to new platforms (e.g. tiktok)."
+      },
+      "ResponseEnvelope_AlertRule_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AlertRule"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ResponseEnvelope[AlertRule]"
+      },
+      "ResponseEnvelope_CreateKeyData_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/CreateKeyData"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ResponseEnvelope[CreateKeyData]"
+      },
+      "ResponseEnvelope_Subject_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/Subject"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ResponseEnvelope[Subject]"
+      },
+      "ResponseEnvelope_list_ActivitySnapshot__": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ActivitySnapshot"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ResponseEnvelope[list[ActivitySnapshot]]"
+      },
+      "ResponseEnvelope_list_AlertRule__": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/AlertRule"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ResponseEnvelope[list[AlertRule]]"
+      },
+      "ResponseEnvelope_list_Subject__": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/Subject"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ResponseEnvelope[list[Subject]]"
+      },
+      "ResponseEnvelope_list_Video__": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/Video"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ResponseEnvelope[list[Video]]"
+      },
+      "ResponseMeta": {
+        "properties": {
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limit"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total"
+          },
+          "request_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Id"
+          }
+        },
+        "type": "object",
+        "title": "ResponseMeta",
+        "description": "Standard response metadata.\n\nAlways present in success responses. Fields are optional so the\nsame shape works for single-resource and paginated list responses."
+      },
+      "Subject": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "platform": {
+            "$ref": "#/components/schemas/Platform"
+          },
+          "platform_id": {
+            "type": "string",
+            "title": "Platform Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name"
+          },
+          "followers": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Followers"
+          },
+          "post_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Post Count"
+          },
+          "activity_frequency": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Activity Frequency"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SubjectStatus"
+          },
+          "last_synced_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last Synced At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "extended_data": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extended Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "platform",
+          "platform_id",
+          "name",
+          "display_name",
+          "followers",
+          "post_count",
+          "activity_frequency",
+          "status",
+          "last_synced_at"
+        ],
+        "title": "Subject",
+        "description": "Current state of a monitored subject.\n\nWritten by the collector, read by the API gateway. The `id` is a\nsystem-generated UUID; `platform_id` is the native identifier on\nthe source platform (Facebook Page ID, YouTube Channel ID)."
+      },
+      "SubjectStatus": {
+        "type": "string",
+        "enum": [
+          "active",
+          "inactive",
+          "suspended"
+        ],
+        "title": "SubjectStatus",
+        "description": "Lifecycle status of a subject as observed by the collector."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "Video": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "subject_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Subject Id"
+          },
+          "platform_video_id": {
+            "type": "string",
+            "title": "Platform Video Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "thumbnail_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thumbnail Url"
+          },
+          "published_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Published At"
+          },
+          "duration": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration"
+          },
+          "view_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "View Count",
+            "default": 0
+          },
+          "like_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Like Count",
+            "default": 0
+          },
+          "comment_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Comment Count",
+            "default": 0
+          },
+          "last_synced_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last Synced At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "subject_id",
+          "platform_video_id",
+          "title",
+          "published_at",
+          "last_synced_at"
+        ],
+        "title": "Video",
+        "description": "Per-video data for a YouTube subject.\n\nUpserted on every sync cycle. Stores the latest observed metrics for\neach video; historical tracking is not maintained."
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "description": "Admin token from ADMIN_TOKEN env var.",
+        "scheme": "bearer"
+      },
+      "APIKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key",
+        "description": "API key issued via the admin endpoint. Internal keys have higher rate limits; external keys are read-only. The raw key is shown exactly once at creation time."
+      },
+      "AdminAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Admin token from the ADMIN_TOKEN env var. Used only by the /v1/admin/* endpoints. A compromised regular API key cannot be used to mint more keys."
+      }
+    }
+  },
+  "security": [
+    {
+      "APIKeyAuth": []
+    }
+  ]
+}

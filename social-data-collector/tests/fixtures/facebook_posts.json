@@ -1,0 +1,22 @@
+{
+  "data": [
+    {
+      "id": "post_1",
+      "created_time": "2026-06-18T10:00:00+0000",
+      "message": "First post",
+      "permalink_url": "https://facebook.com/post_1"
+    },
+    {
+      "id": "post_2",
+      "created_time": "2026-06-15T08:30:00+0000",
+      "message": "Second post",
+      "permalink_url": "https://facebook.com/post_2"
+    },
+    {
+      "id": "post_3",
+      "created_time": "2026-04-20T12:00:00+0000",
+      "message": "Older post",
+      "permalink_url": "https://facebook.com/post_3"
+    }
+  ]
+}
