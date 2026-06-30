@@ -12,7 +12,7 @@ from functools import lru_cache
 from pathlib import Path
 
 from dotenv import load_dotenv
-from pydantic import Field, SecretStr
+from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[3]
@@ -99,6 +99,21 @@ class CORSSettings(BaseSettings):
         return [o.strip() for o in self.allow_origins.split(",") if o.strip()]
 
 
+class JwtSettings(BaseSettings):
+    model_config = SettingsConfigDict(env_file_encoding="utf-8", extra="ignore")
+
+    secret: SecretStr = Field(alias="JWT_SECRET")
+    algorithm: str = "HS256"
+    expiry_hours: int = 24
+
+    @field_validator("secret")
+    @classmethod
+    def _secret_not_empty(cls, v: SecretStr) -> SecretStr:
+        if not v.get_secret_value():
+            raise ValueError("JWT_SECRET must not be empty. Generate one with: python3 -c \"import secrets; print(secrets.token_urlsafe(32))\"")
+        return v
+
+
 class RuntimeSettings(BaseSettings):
     model_config = SettingsConfigDict(env_file_encoding="utf-8", extra="ignore")
 
@@ -119,6 +134,7 @@ class Settings(BaseSettings):
     admin: AdminSettings = Field(default_factory=AdminSettings)  # type: ignore[arg-type]
     credential: CredentialSettings = Field(default_factory=CredentialSettings)
     telegram: TelegramSettings = Field(default_factory=TelegramSettings)  # type: ignore[arg-type]
+    jwt: JwtSettings = Field(default_factory=JwtSettings)  # type: ignore[arg-type]
     cors: CORSSettings = Field(default_factory=CORSSettings)
     runtime: RuntimeSettings = Field(default_factory=RuntimeSettings)
 

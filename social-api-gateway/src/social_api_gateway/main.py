@@ -13,6 +13,7 @@ from fastapi.openapi.utils import get_openapi
 from .admin.platforms.routes import router as platform_admin_router
 from .admin.routes import router as admin_router
 from .alerts.routes import router as alerts_router
+from .auth.routes import router as auth_router
 from .config import get_settings
 from .db import dispose_engine
 from .errors import register_exception_handlers
@@ -105,6 +106,14 @@ def _custom_openapi(app: FastAPI) -> dict[str, Any]:
             "once at creation time."
         ),
     }
+    security_schemes["TelegramAuth"] = {
+        "type": "http",
+        "scheme": "bearer",
+        "description": (
+            "JWT issued by POST /v1/auth/telegram-login. Used by the "
+            "Telegram Mini App for user-scoped API access."
+        ),
+    }
     security_schemes["AdminAuth"] = {
         "type": "http",
         "scheme": "bearer",
@@ -145,6 +154,7 @@ def create_app() -> FastAPI:
     app.include_router(alerts_router)
     app.include_router(admin_router)
     app.include_router(platform_admin_router)
+    app.include_router(auth_router)
     app.include_router(telegram_router)
 
     settings = get_settings()

@@ -67,24 +67,26 @@ export function useTelegram() {
       } catch {
         /* ignore */
       }
-
-      try {
-        const unsubscribe = viewport.height.sub((h) => {
-          if (h) {
-            setViewportHeight(`${h}px`);
-          }
-        });
-        return () => {
-          unsubscribe();
-        };
-      } catch {
-        /* ignore */
-      }
     } catch {
       /* running outside Telegram */
     }
 
     setReady(true);
+
+    /* Subscribe to viewport height changes AFTER setReady to avoid
+       an early return that would prevent ready from becoming true.
+       The subscription cleanup is merged with the effect's return. */
+    let unsubscribeViewport: (() => void) | null = null;
+    try {
+      const unsub = viewport.height.sub((h) => {
+        if (h) {
+          setViewportHeight(`${h}px`);
+        }
+      });
+      unsubscribeViewport = unsub;
+    } catch {
+      /* ignore */
+    }
 
     return () => {
       try {
@@ -94,6 +96,13 @@ export function useTelegram() {
         closingBehavior.unmount();
       } catch {
         /* ignore */
+      }
+      if (unsubscribeViewport) {
+        try {
+          unsubscribeViewport();
+        } catch {
+          /* ignore */
+        }
       }
     };
   }, []);

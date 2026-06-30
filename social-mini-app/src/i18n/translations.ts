@@ -7,6 +7,7 @@ export type TranslationKey =
   | "settings.showGrid" | "settings.showGridDesc" | "settings.compactView" | "settings.compactViewDesc"
   | "settings.about" | "settings.version" | "settings.platform" | "settings.telegramMiniApp"
   | "settings.language" | "settings.selectLanguage" | "settings.english" | "settings.vietnamese"
+  | "settings.account" | "settings.loggedInAs" | "settings.logout" | "settings.authFallback"
   | "dashboard.title" | "dashboard.overview" | "dashboard.totalSubjects" | "dashboard.mostActive"
   | "dashboard.facebook" | "dashboard.youtube" | "dashboard.tracked" | "dashboard.lastSync"
   | "dashboard.browseSubjects"
@@ -69,6 +70,10 @@ export const en: Translations = {
   "settings.selectLanguage": "Display language",
   "settings.english": "English",
   "settings.vietnamese": "Tiếng Việt",
+  "settings.account": "Account",
+  "settings.loggedInAs": "Logged in as {name}",
+  "settings.logout": "Logout",
+  "settings.authFallback": "Using API key (dev mode)",
 
   "dashboard.title": "Dashboard",
   "dashboard.overview": "Overview",
@@ -205,6 +210,10 @@ export const vi: Translations = {
   "settings.selectLanguage": "Ngôn ngữ hiển thị",
   "settings.english": "English",
   "settings.vietnamese": "Tiếng Việt",
+  "settings.account": "Tài khoản",
+  "settings.loggedInAs": "Đăng nhập với tên {name}",
+  "settings.logout": "Đăng xuất",
+  "settings.authFallback": "Đang dùng API key (chế độ dev)",
 
   "dashboard.title": "Tổng quan",
   "dashboard.overview": "Tổng quan",

@@ -22,7 +22,7 @@ sys.path.insert(0, str(_PROJECT_ROOT / "social-api-gateway" / "src"))
 load_dotenv(_PROJECT_ROOT / ".env", override=False)
 
 # Import models so their tables are registered on Base.metadata
-from social_api_gateway.auth.models import APIKeyModel  # noqa: E402, F401
+from social_api_gateway.auth.models import APIKeyModel, TelegramUserModel  # noqa: E402, F401
 from social_api_gateway.config import get_settings  # noqa: E402
 from social_api_gateway.db import Base  # noqa: E402
 

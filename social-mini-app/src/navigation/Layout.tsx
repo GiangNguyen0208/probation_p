@@ -1,14 +1,16 @@
 import { Outlet, useLocation } from "react-router-dom";
+import { useAuth } from "../auth/useAuth";
 import { useTelegram } from "../telegram/useTelegram";
 import { BottomNav } from "./BottomNav";
 import { Spinner } from "../components/ui/Spinner";
 
 export function Layout() {
   const { ready, viewportHeight, haptics } = useTelegram();
+  const { isLoading: authLoading } = useAuth();
   const location = useLocation();
   const isDetail = location.pathname.includes("/subjects/") || (location.pathname.includes("/credentials/") && !location.pathname.endsWith("/credentials") && !location.pathname.endsWith("/credentials/"));
 
-  if (!ready) {
+  if (!ready || authLoading) {
     return (
       <div
         className="flex items-center justify-center"

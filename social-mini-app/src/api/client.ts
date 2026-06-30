@@ -1,7 +1,17 @@
 import type { components } from "./types";
 
 const BASE = import.meta.env.VITE_API_BASE_URL;
-const KEY = import.meta.env.VITE_INTERNAL_API_KEY;
+const FALLBACK_KEY = import.meta.env.VITE_INTERNAL_API_KEY;
+
+let authToken: string | null = null;
+
+export function setAuthToken(token: string | null): void {
+  authToken = token;
+}
+
+export function getAuthToken(): string | null {
+  return authToken;
+}
 
 export class ApiError extends Error {
   constructor(
@@ -15,6 +25,13 @@ export class ApiError extends Error {
 }
 
 type PaginatedResponse<T> = { data: T; meta?: components["schemas"]["ResponseMeta"] };
+
+function buildHeaders(): Record<string, string> {
+  if (authToken) {
+    return { Authorization: `Bearer ${authToken}` };
+  }
+  return { "X-API-Key": FALLBACK_KEY };
+}
 
 async function request<T>(
   method: string,
@@ -31,7 +48,7 @@ async function request<T>(
   const res = await fetch(url, {
     method,
     headers: {
-      "X-API-Key": KEY,
+      ...buildHeaders(),
       ...(body ? { "Content-Type": "application/json" } : {}),
     },
     body: body ? JSON.stringify(body) : undefined,
@@ -66,7 +83,7 @@ export async function apiGetPaginated<T>(
   }
   const res = await fetch(url, {
     method: "GET",
-    headers: { "X-API-Key": KEY },
+    headers: buildHeaders(),
   });
   const json = await res.json();
   if (!res.ok) {

@@ -1,3 +1,4 @@
+import { useAuth } from "../auth/useAuth";
 import { useTelegram } from "../telegram/useTelegram";
 import {
   useTheme,
@@ -5,6 +6,7 @@ import {
   type ThemeMode,
 } from "../theme/ThemeProvider";
 import { useTranslation, type Language, type TranslationKey } from "../i18n";
+import { Button } from "../components/ui/Button";
 import { Card, CardHeader } from "../components/ui/Card";
 import { Toggle } from "../components/ui/Toggle";
 import { Select } from "../components/ui/Select";
@@ -28,6 +30,7 @@ const languageOptions: { value: string; label: TranslationKey }[] = [
 ];
 
 export default function SettingsPage() {
+  const { user, isAuthenticated, logout } = useAuth();
   const { haptics } = useTelegram();
   const { t, language, setLanguage } = useTranslation();
   const {
@@ -120,6 +123,37 @@ export default function SettingsPage() {
               }}
             />
           </div>
+        </Card>
+      </Section>
+
+      <Section title={t("settings.account")}>
+        <Card>
+          {isAuthenticated && user ? (
+            <div className="flex flex-col gap-2 text-sm">
+              <div
+                className="flex justify-between items-center"
+                style={{ color: "var(--tg-text-color)" }}
+              >
+                <span>{t("settings.loggedInAs", { name: user.first_name })}</span>
+                <span style={{ color: "var(--tg-hint-color)" }}>
+                  {user.username ? `@${user.username}` : `#${user.id}`}
+                </span>
+              </div>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  haptics.impact("medium");
+                  logout();
+                }}
+              >
+                {t("settings.logout")}
+              </Button>
+            </div>
+          ) : (
+            <p className="text-sm" style={{ color: "var(--tg-hint-color)" }}>
+              {t("settings.authFallback")}
+            </p>
+          )}
         </Card>
       </Section>
 

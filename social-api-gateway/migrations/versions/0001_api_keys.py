@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
 
-revision: str = "0001"
+revision: str = "dc10e5695da0"
 down_revision: str | None = None
 branch_labels = None
 depends_on = None

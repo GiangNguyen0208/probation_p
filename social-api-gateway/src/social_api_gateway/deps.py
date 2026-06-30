@@ -1,11 +1,15 @@
 """FastAPI dependencies for the gateway.
 
-Dependency order:
+API key dependencies:
 1. `get_db_session` — async DB session per request.
 2. `get_redis_client` — async Redis client per request.
 3. `get_cache_service` — CacheService wrapping the Redis client.
 4. `get_api_key` — extracts key from headers, looks it up, verifies hash.
 5. `rate_limit` — depends on get_api_key; increments counters, returns 429 on excess.
+
+JWT / Telegram auth dependencies:
+6. `get_current_user` — extracts and verifies a Bearer JWT, returns user info.
+7. `rate_limit_auth` — IP-based rate limiting (10 req/min per IP) for unauthenticated endpoints.
 
 Route handlers compose these via `Depends(...)`. Tests override the
 underlying dependencies in `app.dependency_overrides` to use SQLite +
@@ -15,9 +19,12 @@ fakeredis without spinning up external services.
 from __future__ import annotations
 
 from collections.abc import AsyncIterator
+from typing import Any
 
+import jwt
 from celery import Celery
-from fastapi import Depends, Header, HTTPException, Response, status
+from fastapi import Depends, Header, HTTPException, Request, Response, status
+from jwt import PyJWTError
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -159,3 +166,100 @@ async def rate_limit(
         )
 
     return api_key
+
+
+# ---------------------------------------------------------------------------
+# JWT / Telegram auth
+# ---------------------------------------------------------------------------
+
+
+def _get_client_ip(request: Request) -> str:
+    """Extract the client IP from the request, respecting proxies."""
+    forwarded = request.headers.get("X-Forwarded-For")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    real_ip = request.headers.get("X-Real-IP")
+    if real_ip:
+        return real_ip.strip()
+    return request.client.host if request.client else "127.0.0.1"
+
+
+async def get_current_user(
+    request: Request,
+    authorization: str | None = Header(default=None),
+) -> dict[str, Any]:
+    """Extract and verify a Bearer JWT from the Authorization header.
+
+    Returns a dict with ``telegram_id``, ``name``, and ``username``
+    on success. Raises ``401`` if the token is missing, expired, or
+    tampered with.
+    """
+    if not authorization or not authorization.lower().startswith("bearer "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"code": "missing_token", "message": "Authorization Bearer token is required."},
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    token = authorization[7:].strip()
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"code": "missing_token", "message": "Authorization Bearer token is required."},
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    settings = get_settings()
+    try:
+        payload: dict[str, Any] = jwt.decode(
+            token,
+            settings.jwt.secret.get_secret_value(),
+            algorithms=[settings.jwt.algorithm],
+        )
+    except PyJWTError as exc:
+        logger.warning("auth.jwt_invalid", error=str(exc))
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"code": "invalid_token", "message": "Token is invalid or expired."},
+            headers={"WWW-Authenticate": "Bearer"},
+        ) from exc
+
+    telegram_id = payload.get("sub")
+    if not telegram_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"code": "invalid_token", "message": "Token payload is malformed."},
+        )
+
+    return {
+        "telegram_id": int(telegram_id),
+        "name": payload.get("name", ""),
+        "username": payload.get("username", ""),
+    }
+
+
+async def rate_limit_auth(
+    request: Request,
+    redis: Redis = Depends(get_redis_client),
+) -> None:
+    """IP-based rate limiting for unauthenticated endpoints (e.g. login).
+
+    10 requests per minute per IP. Use ``Depends(rate_limit_auth)``
+    on public endpoints that need to be gated before authentication.
+    """
+    ip = _get_client_ip(request)
+    key = f"ratelimit:auth:{ip}:minute"
+    pipe = redis.pipeline()
+    pipe.incr(key)
+    pipe.expire(key, 60, nx=True)
+    pipe.ttl(key)
+    results = await pipe.execute()
+    count = int(results[0])
+    ttl = int(results[2])
+    if ttl < 0:
+        ttl = 60
+    if count > 10:
+        logger.warning("auth.rate_limit.exceeded", ip=ip, count=count)
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail={"code": "rate_limited", "message": "Too many requests. Try again later."},
+            headers={"Retry-After": str(max(1, ttl))},
+        )
