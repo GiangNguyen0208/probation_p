@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useCredential, useRevokeCredential, useUpdateCredential, usePlatforms } from "../api/admin-hooks";
+import { useCredential, useRevokeCredential, useUpdateCredential, usePlatforms } from "../api/credential-hooks";
 import type { ConfigSchemaField } from "../api/admin-types";
 import { DynamicCredentialForm } from "../components/credentials/DynamicCredentialForm";
 import StateViews from "../components/state/StateViews";

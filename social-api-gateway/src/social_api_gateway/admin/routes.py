@@ -18,9 +18,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, ConfigDict, Field
 from social_common.envelope import ResponseEnvelope, ResponseMeta
+from sqlalchemy import select as sa_select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from social_api_gateway.auth.models import APIKeyTier
+from social_api_gateway.auth.models import APIKeyTier, TelegramUserModel, UserRole
 from social_api_gateway.auth.service import APIKeyService
 from social_api_gateway.config import get_settings
 from social_api_gateway.deps import get_db_session
@@ -37,6 +38,26 @@ admin_security = HTTPBearer(
     description="Admin token from ADMIN_TOKEN env var.",
     auto_error=False,
 )
+
+
+class GrantAdminRequest(BaseModel):
+    """Request body for granting/revoking admin role."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    telegram_id: int = Field(description="Telegram user ID to update.")
+    role: UserRole = Field(description="Target role: `admin` or `user`.")
+
+
+class GrantAdminData(BaseModel):
+    """Response body for the grant admin action."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    telegram_id: int
+    first_name: str
+    username: str | None
+    role: UserRole
 
 
 class CreateKeyRequest(BaseModel):
@@ -69,6 +90,86 @@ class CreateKeyData(BaseModel):
     key_prefix: str
     created_at: datetime
     api_key: str
+
+
+@router.post(
+    "/grant",
+    status_code=status.HTTP_200_OK,
+    response_model=ResponseEnvelope[GrantAdminData],
+    summary="Grant or revoke admin role for a Telegram user",
+    description=(
+        "Update the role of a Telegram user. Requires `ADMIN_TOKEN` in the "
+        "`Authorization: Bearer <ADMIN_TOKEN>` header. The user must exist in "
+        "the `telegram_users` table (i.e. must have logged in at least once). "
+        "Role takes effect on next login (new JWT)."
+    ),
+    responses={
+        200: {"description": "Role updated successfully."},
+        401: {"description": "Missing admin token"},
+        403: {"description": "Invalid admin token"},
+        404: {"description": "Telegram user not found"},
+        422: {"description": "Invalid request body"},
+    },
+    openapi_extra={"security": [{"AdminAuth": []}]},
+)
+async def grant_admin(
+    body: GrantAdminRequest,
+    credentials: HTTPAuthorizationCredentials | None = Depends(admin_security),
+    db: AsyncSession = Depends(get_db_session),
+) -> ResponseEnvelope[GrantAdminData]:
+    """Grant or revoke admin role for a Telegram user."""
+    if credentials is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"code": "missing_admin_token", "message": "Admin token is required."},
+        )
+
+    settings = get_settings()
+    expected = settings.admin.token.get_secret_value()
+
+    if not hmac.compare_digest(credentials.credentials, expected):
+        logger.warning("admin.grant.unauthorized")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"code": "invalid_admin_token", "message": "Admin token is invalid."},
+        )
+
+    result = await db.execute(
+        sa_select(TelegramUserModel).where(TelegramUserModel.telegram_id == body.telegram_id)
+    )
+    user = result.scalar_one_or_none()
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "code": "telegram_user_not_found",
+                "message": (
+                    f"Telegram user {body.telegram_id} not found. "
+                    "User must log in at least once before being granted admin."
+                ),
+            },
+        )
+
+    user.role = body.role
+    await db.flush()
+    await db.commit()
+    await db.refresh(user)
+
+    logger.info(
+        "admin.grant.success",
+        telegram_id=body.telegram_id,
+        role=body.role.value,
+    )
+
+    return ResponseEnvelope(
+        data=GrantAdminData(
+            telegram_id=user.telegram_id,
+            first_name=user.first_name,
+            username=user.username,
+            role=user.role,
+        ),
+        meta=ResponseMeta(),
+    )
 
 
 @router.post(

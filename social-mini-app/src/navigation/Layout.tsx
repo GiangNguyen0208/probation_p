@@ -6,7 +6,7 @@ import { Spinner } from "../components/ui/Spinner";
 
 export function Layout() {
   const { ready, viewportHeight, haptics } = useTelegram();
-  const { isLoading: authLoading } = useAuth();
+  const { isLoading: authLoading, isAdmin } = useAuth();
   const location = useLocation();
   const isDetail = location.pathname.includes("/subjects/") || (location.pathname.includes("/credentials/") && !location.pathname.endsWith("/credentials") && !location.pathname.endsWith("/credentials/"));
 
@@ -46,7 +46,7 @@ export function Layout() {
         </div>
       </main>
 
-      {!isDetail && <BottomNav haptics={haptics} />}
+      {!isDetail && <BottomNav haptics={haptics} isAdmin={isAdmin} />}
     </div>
   );
 }

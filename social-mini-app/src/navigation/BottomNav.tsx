@@ -91,8 +91,13 @@ const navItems = [
   },
 ];
 
-export function BottomNav({ haptics }: { haptics: Haptics }) {
+export function BottomNav({ haptics, isAdmin }: { haptics: Haptics; isAdmin: boolean }) {
   const { t } = useTranslation();
+
+  const visibleItems = navItems.filter((item) => {
+    if (item.path === "/credentials") return isAdmin;
+    return true;
+  });
 
   return (
     <nav
@@ -104,7 +109,7 @@ export function BottomNav({ haptics }: { haptics: Haptics }) {
         paddingBottom: "var(--tg-safe-area-inset-bottom)",
       }}
     >
-      {navItems.map((item) => {
+      {visibleItems.map((item) => {
         const label = t(item.translationKey);
         return (
           <NavLink

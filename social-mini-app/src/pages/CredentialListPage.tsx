@@ -1,5 +1,5 @@
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useCredentials } from "../api/admin-hooks";
+import { useCredentials } from "../api/credential-hooks";
 import { CredentialCard } from "../components/credentials/CredentialCard";
 import StateViews from "../components/state/StateViews";
 import { PageHeader } from "../components/ui/PageHeader";

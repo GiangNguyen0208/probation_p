@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/useAuth";
 import { useTelegram } from "../telegram/useTelegram";
 import {
@@ -30,8 +31,9 @@ const languageOptions: { value: string; label: TranslationKey }[] = [
 ];
 
 export default function SettingsPage() {
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, isAdmin, logout } = useAuth();
   const { haptics } = useTelegram();
+  const navigate = useNavigate();
   const { t, language, setLanguage } = useTranslation();
   const {
     mode,
@@ -134,7 +136,20 @@ export default function SettingsPage() {
                 className="flex justify-between items-center"
                 style={{ color: "var(--tg-text-color)" }}
               >
-                <span>{t("settings.loggedInAs", { name: user.first_name })}</span>
+                <span>
+                  {t("settings.loggedInAs", { name: user.first_name })}
+                  {isAdmin && (
+                    <span
+                      className="ml-1.5 text-xs px-1.5 py-0.5 rounded"
+                      style={{
+                        backgroundColor: "rgba(52,199,89,0.15)",
+                        color: "#34c759",
+                      }}
+                    >
+                      Admin
+                    </span>
+                  )}
+                </span>
                 <span style={{ color: "var(--tg-hint-color)" }}>
                   {user.username ? `@${user.username}` : `#${user.id}`}
                 </span>
@@ -156,6 +171,23 @@ export default function SettingsPage() {
           )}
         </Card>
       </Section>
+
+      {isAdmin && (
+        <Section title="Admin">
+          <Card>
+            <Button
+              fullWidth
+              variant="ghost"
+              onClick={() => {
+                haptics.impact("light");
+                navigate("/credentials");
+              }}
+            >
+              {t("credentials.title")}
+            </Button>
+          </Card>
+        </Section>
+      )}
 
       <Section title={t("settings.about")}>
         <Card>

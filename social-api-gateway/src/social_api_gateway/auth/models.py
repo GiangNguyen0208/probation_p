@@ -14,6 +14,13 @@ from sqlalchemy.orm import Mapped, mapped_column
 from ..db import Base
 
 
+class UserRole(StrEnum):
+    """Role assigned to a Telegram user. Future: editor, viewer, etc."""
+
+    USER = "user"
+    ADMIN = "admin"
+
+
 def _utcnow() -> datetime:
     return datetime.now(UTC)
 
@@ -24,6 +31,9 @@ class TelegramUserModel(Base):
     ``telegram_id`` is the primary key (since Telegram provides it).
     On each login the user is upserted: ``last_login_at`` and profile
     fields are updated while ``created_at`` is preserved.
+
+    ``role`` defaults to ``USER``. A caller with ADMIN_TOKEN can promote
+    a user via ``POST /v1/admin/grant``.
     """
 
     __tablename__ = "telegram_users"
@@ -38,6 +48,14 @@ class TelegramUserModel(Base):
     last_name: Mapped[str | None] = mapped_column(String(128), nullable=True)
     username: Mapped[str | None] = mapped_column(String(128), nullable=True)
     language_code: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    role: Mapped[UserRole] = mapped_column(
+        SAEnum(
+            UserRole, name="user_role_enum", values_callable=lambda e: [m.value for m in e]
+        ),
+        nullable=False,
+        default=UserRole.USER,
+        server_default=UserRole.USER.value,
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=_utcnow
     )

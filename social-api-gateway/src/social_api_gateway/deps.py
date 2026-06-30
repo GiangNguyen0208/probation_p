@@ -11,6 +11,8 @@ JWT / Telegram auth dependencies:
 6. `get_current_user` — extracts and verifies a Bearer JWT, returns user info.
 7. `rate_limit_auth` — IP-based rate limiting (10 req/min per IP) for unauthenticated endpoints.
 
+8. `require_admin` — dual auth: ADMIN_TOKEN or JWT with role='admin'.
+
 Route handlers compose these via `Depends(...)`. Tests override the
 underlying dependencies in `app.dependency_overrides` to use SQLite +
 fakeredis without spinning up external services.
@@ -18,6 +20,7 @@ fakeredis without spinning up external services.
 
 from __future__ import annotations
 
+import hmac
 from collections.abc import AsyncIterator
 from typing import Any
 
@@ -190,9 +193,9 @@ async def get_current_user(
 ) -> dict[str, Any]:
     """Extract and verify a Bearer JWT from the Authorization header.
 
-    Returns a dict with ``telegram_id``, ``name``, and ``username``
-    on success. Raises ``401`` if the token is missing, expired, or
-    tampered with.
+    Returns a dict with ``telegram_id``, ``name``, ``username``, and
+    ``role`` on success. Raises ``401`` if the token is missing, expired,
+    or tampered with.
     """
     if not authorization or not authorization.lower().startswith("bearer "):
         raise HTTPException(
@@ -233,6 +236,7 @@ async def get_current_user(
         "telegram_id": int(telegram_id),
         "name": payload.get("name", ""),
         "username": payload.get("username", ""),
+        "role": payload.get("role", "user"),
     }
 
 
@@ -263,3 +267,72 @@ async def rate_limit_auth(
             detail={"code": "rate_limited", "message": "Too many requests. Try again later."},
             headers={"Retry-After": str(max(1, ttl))},
         )
+
+
+# ---------------------------------------------------------------------------
+# Admin auth (dual-mode: ADMIN_TOKEN or JWT with admin role)
+# ---------------------------------------------------------------------------
+
+
+def _extract_bearer_token(authorization: str | None) -> str | None:
+    """Extract a Bearer token from the Authorization header value."""
+    if not authorization:
+        return None
+    if not authorization.lower().startswith("bearer "):
+        return None
+    token = authorization[7:].strip()
+    return token if token else None
+
+
+async def require_admin(
+    request: Request,
+    authorization: str | None = Header(default=None),
+) -> dict[str, Any]:
+    """Authenticate as admin — accepts ADMIN_TOKEN or a JWT with role='admin'.
+
+    Tries ADMIN_TOKEN first (backward compatible with existing
+    admin-client.py usage), then falls back to JWT Bearer token with
+    ``role`` claim set to ``"admin"``. Raises 401/403 on failure.
+    """
+    token = _extract_bearer_token(authorization)
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"code": "missing_token", "message": "Authorization Bearer token is required."},
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    settings = get_settings()
+
+    # 1. Try ADMIN_TOKEN first.
+    admin_token = settings.admin.token.get_secret_value()
+    if admin_token and hmac.compare_digest(token, admin_token):
+        return {"auth_mode": "admin_token"}
+
+    # 2. Try JWT with admin role.
+    try:
+        payload: dict[str, Any] = jwt.decode(
+            token,
+            settings.jwt.secret.get_secret_value(),
+            algorithms=[settings.jwt.algorithm],
+        )
+    except PyJWTError:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"code": "forbidden", "message": "Admin privileges are required."},
+        ) from None
+
+    role = payload.get("role", "user")
+    if role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"code": "forbidden", "message": "Admin privileges are required."},
+        )
+
+    return {
+        "auth_mode": "jwt",
+        "telegram_id": int(payload.get("sub", 0)),
+        "name": payload.get("name", ""),
+        "username": payload.get("username", ""),
+        "role": role,
+    }

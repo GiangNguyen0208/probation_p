@@ -4,11 +4,14 @@ import { apiPost, setAuthToken } from "../api/client";
 
 const STORAGE_KEY = "social_intel_jwt";
 
+export type UserRole = "user" | "admin";
+
 export interface AuthUser {
   id: number;
   first_name: string;
   last_name?: string | null;
   username?: string | null;
+  role: UserRole;
 }
 
 export interface AuthContextValue {
@@ -17,6 +20,7 @@ export interface AuthContextValue {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  isAdmin: boolean;
   login: () => Promise<void>;
   logout: () => void;
 }
@@ -118,6 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated: !!token,
         isLoading,
         error,
+        isAdmin: user?.role === "admin",
         login,
         logout,
       }}

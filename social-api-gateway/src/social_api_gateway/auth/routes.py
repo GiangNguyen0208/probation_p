@@ -23,7 +23,7 @@ from ..config import get_settings
 from ..deps import get_db_session, get_redis_client
 from ..logging_setup import get_logger
 from ..telegram.initdata import verify_init_data
-from .models import TelegramUserModel
+from .models import TelegramUserModel, UserRole
 
 logger = get_logger("social_api_gateway.auth.routes")
 
@@ -99,7 +99,7 @@ async def _upsert_telegram_user(
     return user
 
 
-def _mint_jwt(telegram_id: int, first_name: str, username: str | None) -> str:
+def _mint_jwt(telegram_id: int, first_name: str, username: str | None, role: str = UserRole.USER) -> str:
     """Create a signed JWT for the authenticated Telegram user."""
     settings = get_settings()
     now = int(time.time())
@@ -107,6 +107,7 @@ def _mint_jwt(telegram_id: int, first_name: str, username: str | None) -> str:
         "sub": str(telegram_id),
         "name": first_name,
         "username": username or "",
+        "role": role,
         "iat": now,
         "exp": now + settings.jwt.expiry_hours * 3600,
     }
@@ -133,7 +134,7 @@ def _mint_jwt(telegram_id: int, first_name: str, username: str | None) -> str:
                 "application/json": {
                     "example": {
                         "token": "eyJhbGciOiJIUzI1NiIs...",
-                        "user": {"id": 123456789, "first_name": "John", "username": "johndoe"},
+                        "user": {"id": 123456789, "first_name": "John", "username": "johndoe", "role": "user"},
                     }
                 }
             },
@@ -194,12 +195,18 @@ async def telegram_login(
         language_code=user_data.language_code,
     )
 
-    token = _mint_jwt(user_data.id, user_data.first_name, user_data.username)
+    token = _mint_jwt(
+        user_data.id,
+        user_data.first_name,
+        user_data.username,
+        role=db_user.role.value,
+    )
 
     logger.info(
         "auth.login_success",
         telegram_id=user_data.id,
         username=user_data.username,
+        role=db_user.role.value,
     )
 
     return {
@@ -209,5 +216,6 @@ async def telegram_login(
             "first_name": db_user.first_name,
             "last_name": db_user.last_name,
             "username": db_user.username,
+            "role": db_user.role.value,
         },
     }

@@ -1,4 +1,5 @@
-import { createBrowserRouter } from "react-router-dom";
+import { Navigate, createBrowserRouter } from "react-router-dom";
+import { useAuth } from "./auth/useAuth";
 import { Layout } from "./navigation/Layout";
 import CredentialDetailPage from "./pages/CredentialDetailPage";
 import CredentialFormPage from "./pages/CredentialFormPage";
@@ -8,6 +9,13 @@ import SettingsPage from "./pages/SettingsPage";
 import SubjectDetailPage from "./pages/SubjectDetailPage";
 import SubjectListPage from "./pages/SubjectListPage";
 
+function AdminGuard({ children }: { children: React.ReactNode }) {
+  const { isAdmin, isLoading } = useAuth();
+  if (isLoading) return null;
+  if (!isAdmin) return <Navigate to="/" replace />;
+  return <>{children}</>;
+}
+
 export const router = createBrowserRouter([
   {
     element: <Layout />,
@@ -16,9 +24,18 @@ export const router = createBrowserRouter([
       { path: "/dashboard", element: <DashboardPage /> },
       { path: "/settings", element: <SettingsPage /> },
       { path: "/subjects/:id", element: <SubjectDetailPage /> },
-      { path: "/credentials", element: <CredentialListPage /> },
-      { path: "/credentials/new", element: <CredentialFormPage /> },
-      { path: "/credentials/:id", element: <CredentialDetailPage /> },
+      {
+        path: "/credentials",
+        element: <AdminGuard><CredentialListPage /></AdminGuard>,
+      },
+      {
+        path: "/credentials/new",
+        element: <AdminGuard><CredentialFormPage /></AdminGuard>,
+      },
+      {
+        path: "/credentials/:id",
+        element: <AdminGuard><CredentialDetailPage /></AdminGuard>,
+      },
     ],
   },
 ]);
