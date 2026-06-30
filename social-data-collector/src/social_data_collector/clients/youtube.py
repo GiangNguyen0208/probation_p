@@ -1,12 +1,13 @@
-"""YouTube Data API v3 client.
+"""YouTube Data API v3 + Analytics API v2 clients.
 
-Fetches channel profile data and recent uploads for a given channel ID.
-Authentication uses an API key (no OAuth required for public channel data).
+Data API v3: channel profile, uploads, video stats (API key auth).
+Analytics API v2: time-series insights (OAuth 2.0 auth).
 
 Quota cost reference (per https://developers.google.com/youtube/v3/determine_quota_cost):
   - channels.list   → 1 unit
   - playlistItems.list → 1 unit per page (max 50 items/page)
   - activities.list → 1 unit  (not used here; playlist approach is preferred)
+  - Analytics API reports → 1 unit per call
 
 Per Phase 0 research: uploads playlist ID is discovered via channels.list
 response (contentDetails.relatedPlaylists.uploads). No UC→UU conversion.
@@ -14,8 +15,9 @@ response (contentDetails.relatedPlaylists.uploads). No UC→UU conversion.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
+import httpx
 from social_common.errors import PermanentPlatformError, SubjectNotFoundError
 
 from ..config import YouTubeSettings
@@ -181,3 +183,95 @@ class YouTubeClient(BaseHTTPClient):
         content_details = items[0].get("contentDetails", {})
         related = content_details.get("relatedPlaylists", {})
         return related.get("uploads") or None
+
+
+# ------------------------------------------------------------------
+# YouTube Analytics API v2  (requires OAuth 2.0)
+# ------------------------------------------------------------------
+
+# Metrics available via the Analytics API.
+ANALYTICS_METRICS = [
+    "views",
+    "estimatedMinutesWatched",
+    "subscribersGained",
+    "subscribersLost",
+    "likes",
+    "comments",
+    "shares",
+]
+
+ANALYTICS_METRIC_LABELS: dict[str, str] = {
+    "views": "Views",
+    "estimatedMinutesWatched": "Watch Time (min)",
+    "subscribersGained": "Subscribers Gained",
+    "subscribersLost": "Subscribers Lost",
+    "likes": "Likes",
+    "comments": "Comments",
+    "shares": "Shares",
+}
+
+ANALYTICS_BASE_URL = "https://youtubeanalytics.googleapis.com/v2"
+
+
+class YouTubeAnalyticsClient:
+    """YouTube Analytics API v2 wrapper.
+
+    Requires an OAuth 2.0 access token with the ``yt-analytics.readonly``
+    scope.  When no token is available the client returns empty data rather
+    than raising — this lets callers degrade gracefully when only an API
+    key is configured.
+
+    Reference: https://developers.google.com/youtube/analytics/reference/reports
+    """
+
+    def __init__(self, access_token: str | None = None) -> None:
+        self._access_token = access_token
+
+    def get_channel_insights(
+        self,
+        channel_id: str,
+        start_date: str | None = None,
+        end_date: str | None = None,
+        metrics: list[str] | None = None,
+    ) -> dict[str, Any]:
+        """Fetch time-series analytics for a channel over a date range.
+
+        Returns the raw Analytics API response JSON (``columnHeaders`` +
+        ``rows`` format).  The caller is responsible for pivoting this
+        into the unified insight shape (see ``normalizers/youtube.py``).
+
+        Returns ``{"rows": []}`` when no OAuth token is available or when
+        the API returns an error — never raises for missing credentials.
+        """
+        if not self._access_token:
+            return {"columnHeaders": [], "rows": []}
+
+        from datetime import UTC, datetime, timedelta
+
+        end = end_date or datetime.now(UTC).strftime("%Y-%m-%d")
+        start = start_date or (datetime.now(UTC) - timedelta(days=30)).strftime("%Y-%m-%d")
+        metric_str = ",".join(metrics or ANALYTICS_METRICS)
+
+        params: dict[str, str] = {
+            "ids": f"channel=={channel_id}",
+            "startDate": start,
+            "endDate": end,
+            "metrics": metric_str,
+            "dimensions": "day",
+            "sort": "day",
+        }
+
+        try:
+            response = httpx.get(
+                f"{ANALYTICS_BASE_URL}/reports",
+                params=params,
+                headers={"Authorization": f"Bearer {self._access_token}"},
+                timeout=30.0,
+            )
+            if response.status_code == 401:
+                # Token expired — caller should refresh and retry on next cycle.
+                return {"columnHeaders": [], "rows": []}
+            response.raise_for_status()
+            return cast("dict[str, Any]", response.json())
+        except httpx.HTTPError:
+            return {"columnHeaders": [], "rows": []}

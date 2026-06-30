@@ -22,7 +22,7 @@ async function request<T>(
   body?: unknown,
   params?: Record<string, unknown>,
 ): Promise<T> {
-  const url = BASE ? new URL(BASE + path) : new URL(path, window.location.origin);
+  const url = BASE ? new URL(path, BASE) : new URL(path, window.location.origin);
   if (params) {
     for (const [k, v] of Object.entries(params)) {
       if (v != null) url.searchParams.set(k, String(v));

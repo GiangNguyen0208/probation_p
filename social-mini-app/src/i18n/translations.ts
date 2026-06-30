@@ -34,7 +34,10 @@ export type TranslationKey =
   | "alert.configTitle" | "alert.historyTitle" | "alert.noRules" | "alert.noLogs"
   | "alert.newRule" | "alert.addRule" | "alert.editRule" | "alert.deleteRule"
   | "alert.ruleType" | "alert.threshold" | "alert.cooldown" | "alert.channel"
-  | "alert.followerDrop" | "alert.followerGrowthLabel" | "alert.activityDrop";
+  | "alert.followerDrop" | "alert.followerGrowthLabel" | "alert.activityDrop"
+  | "insights.title" | "insights.impressions" | "insights.reach" | "insights.pageViews" | "insights.engagements"
+  | "insights.reactions" | "insights.follows" | "insights.pageFans"
+  | "insights.viewsPerDay" | "insights.subscribersGained" | "insights.likes" | "insights.comments";
 
 export type Translations = Record<TranslationKey, string>;
 
@@ -176,6 +179,19 @@ export const en: Translations = {
   "alert.followerDrop": "Follower Drop",
   "alert.followerGrowthLabel": "Follower Growth",
   "alert.activityDrop": "Activity Drop",
+
+  "insights.title": "Insights",
+  "insights.impressions": "Media Views",
+  "insights.reach": "Reach",
+  "insights.pageViews": "Page Views",
+  "insights.engagements": "Post Engagements",
+  "insights.reactions": "Reactions",
+  "insights.follows": "New Follows",
+  "insights.pageFans": "Total Followers",
+  "insights.viewsPerDay": "Views/Day",
+  "insights.subscribersGained": "New Subs",
+  "insights.likes": "Likes",
+  "insights.comments": "Comments",
 };
 
 export const vi: Translations = {
@@ -316,4 +332,17 @@ export const vi: Translations = {
   "alert.followerDrop": "Tụt người theo dõi",
   "alert.followerGrowthLabel": "Tăng người theo dõi",
   "alert.activityDrop": "Sụt giảm hoạt động",
+
+  "insights.title": "Insights",
+  "insights.impressions": "Lượt xem media",
+  "insights.reach": "Tiếp cận",
+  "insights.pageViews": "Lượt xem trang",
+  "insights.engagements": "Tương tác bài",
+  "insights.reactions": "Cảm xúc",
+  "insights.follows": "Theo dõi mới",
+  "insights.pageFans": "Tổng người theo dõi",
+  "insights.viewsPerDay": "Lượt xem/Ngày",
+  "insights.subscribersGained": "Sub mới",
+  "insights.likes": "Lượt thích",
+  "insights.comments": "Bình luận",
 };

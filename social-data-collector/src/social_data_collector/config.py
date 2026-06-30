@@ -53,6 +53,15 @@ class FacebookSettings(BaseSettings):
     # by `seed-subjects` CLI and as a fallback when the DB has no subjects.
     test_page_ids_raw: str = Field(default="", alias="test_page_ids")
 
+    # Comma-separated list of insight metrics to fetch during sync.
+    # Requires pages_read_engagement + read_insights permissions.
+    insight_metrics: str = (
+        "page_media_view,page_total_media_view_unique,"
+        "page_actions_post_reactions_total,"
+        "page_views_total,page_post_engagements,"
+        "page_follows,page_daily_follows_unique"
+    )
+
     @property
     def test_page_ids(self) -> list[str]:
         return [item.strip() for item in self.test_page_ids_raw.split(",") if item.strip()]

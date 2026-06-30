@@ -18,16 +18,12 @@ export interface ButtonProps
 }
 
 const sizeStyles: Record<Size, string> = {
-  sm: "px-3 py-1.5 text-sm min-h-36",
-  md: "px-4 py-2.5 text-sm min-h-44",
-  lg: "px-5 py-3 text-base min-h-52",
+  sm: "px-3 py-1.5 text-sm min-h-9",
+  md: "px-4 py-2.5 text-sm min-h-11",
+  lg: "px-5 py-3 text-base min-h-13",
 };
 
-const variantStyles: Record<Variant, string> = {
-  primary: "",
-  secondary: "",
-  ghost: "",
-};
+const variantStyles: Record<Variant, string> = { primary: "", secondary: "", ghost: "" };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   (

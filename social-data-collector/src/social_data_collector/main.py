@@ -233,6 +233,7 @@ def _handle_seed_subjects(logger: structlog.stdlib.BoundLogger) -> int:
     logger.info("seed.complete", seeded=seeded)
     return 0
 
+
 def main(argv: Sequence[str] | None = None) -> int:
     settings = get_settings()
     configure_logging(settings.runtime.log_level)

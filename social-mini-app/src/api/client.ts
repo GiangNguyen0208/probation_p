@@ -27,10 +27,11 @@ export class ApiError extends Error {
 type PaginatedResponse<T> = { data: T; meta?: components["schemas"]["ResponseMeta"] };
 
 function buildHeaders(): Record<string, string> {
+  const headers: Record<string, string> = { "X-API-Key": FALLBACK_KEY };
   if (authToken) {
-    return { Authorization: `Bearer ${authToken}` };
+    headers["Authorization"] = `Bearer ${authToken}`;
   }
-  return { "X-API-Key": FALLBACK_KEY };
+  return headers;
 }
 
 async function request<T>(
@@ -39,7 +40,7 @@ async function request<T>(
   body?: unknown,
   params?: Record<string, unknown>,
 ): Promise<T> {
-  const url = BASE ? new URL(BASE + path) : new URL(path, window.location.origin);
+  const url = BASE ? new URL(path, BASE) : new URL(path, window.location.origin);
   if (params) {
     for (const [k, v] of Object.entries(params)) {
       if (v != null) url.searchParams.set(k, String(v));
@@ -64,7 +65,10 @@ async function request<T>(
       json?.error?.message ?? res.statusText,
     );
   }
-  return (json as PaginatedResponse<T>).data as T;
+  if (json && typeof json === "object" && "data" in json) {
+    return json.data as T;
+  }
+  return json as T;
 }
 
 export async function apiGet<T>(path: string, params?: Record<string, unknown>): Promise<T> {
@@ -75,7 +79,7 @@ export async function apiGetPaginated<T>(
   path: string,
   params?: Record<string, unknown>,
 ): Promise<{ data: T; total: number }> {
-  const url = BASE ? new URL(BASE + path) : new URL(path, window.location.origin);
+  const url = BASE ? new URL(path, BASE) : new URL(path, window.location.origin);
   if (params) {
     for (const [k, v] of Object.entries(params)) {
       if (v != null) url.searchParams.set(k, String(v));

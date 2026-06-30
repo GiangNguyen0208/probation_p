@@ -24,11 +24,11 @@ from sqlalchemy import select
 
 from ..clients.base import RetryPolicy
 from ..clients.facebook import FacebookClient
-from ..clients.youtube import YouTubeClient
+from ..clients.youtube import YouTubeAnalyticsClient, YouTubeClient
 from ..config import get_settings
 from ..logging_setup import get_logger
-from ..normalizers.facebook import FacebookNormalizer
-from ..normalizers.youtube import YouTubeNormalizer
+from ..normalizers.facebook import FacebookNormalizer, normalize_facebook_insights
+from ..normalizers.youtube import YouTubeNormalizer, pivot_analytics
 from ..persistence.credential_resolver import resolve_credential
 from ..persistence.models import SubjectModel
 from ..persistence.repository import run_in_transaction, sync_subject, sync_videos
@@ -156,7 +156,11 @@ def sync_facebook_subject(page_id: str) -> dict[str, Any]:
             recent_posts = client.get_recent_posts(
                 page_id, limit=settings.sync.activity_sample_size
             )
-            insights = client.get_page_insights(page_id)
+            raw_insights = client.get_page_insights(
+                page_id,
+                metrics=settings.facebook.insight_metrics,
+            )
+            insights = normalize_facebook_insights(raw_insights)
             photos = client.get_photos(page_id)
             videos = client.get_videos(page_id)
             extended_data = {
@@ -275,6 +279,33 @@ def _normalize_video(item: dict[str, Any], subject_id: str, synced_at: datetime)
     )
 
 
+def _lookup_youtube_oauth_token(channel_id: str) -> str | None:
+    """Look up a per-subject YouTube OAuth access token from stored credentials."""
+    subject = run_in_transaction(
+        lambda s: s.execute(
+            select(SubjectModel).where(
+                SubjectModel.platform == Platform.YOUTUBE,
+                SubjectModel.platform_id == channel_id,
+            )
+        ).scalar_one_or_none()
+    )
+    if subject is None or subject.credential_id is None:
+        return None
+    decrypted = resolve_credential(subject.credential_id)
+    if decrypted is None:
+        return None
+    token = decrypted.get("access_token")
+    if not token:
+        logger.warning(
+            "sync.credential.missing_field",
+            platform="youtube",
+            channel_id=channel_id,
+            credential_id=str(subject.credential_id),
+            field="access_token",
+        )
+    return token
+
+
 def _lookup_youtube_api_key(channel_id: str) -> str | None:
     """Look up a per-subject YouTube API key from stored credentials."""
     subject = run_in_transaction(
@@ -342,6 +373,22 @@ def sync_youtube_subject(channel_id: str) -> dict[str, Any]:
                 if item.get("contentDetails", {}).get("videoId")
             ]
             video_details = client.get_video_details(video_ids) if video_ids else []
+
+        # YouTube Analytics (OAuth-optional): fetch time-series insights.
+        analytics_raw: dict[str, Any] = {}
+        analytics_metrics: list[dict[str, Any]] = []
+        oauth_token = _lookup_youtube_oauth_token(channel_id)
+        if oauth_token:
+            analytics_client = YouTubeAnalyticsClient(access_token=oauth_token)
+            analytics_raw = analytics_client.get_channel_insights(channel_id)
+            analytics_metrics = pivot_analytics(analytics_raw)
+            if analytics_metrics:
+                logger.info(
+                    "sync.analytics.success",
+                    platform="youtube",
+                    channel_id=channel_id,
+                    metric_count=len(analytics_metrics),
+                )
     except SubjectNotFoundError as exc:
         logger.error(
             "sync.subject_not_found", platform="youtube", channel_id=channel_id, error=str(exc)
@@ -370,10 +417,13 @@ def sync_youtube_subject(channel_id: str) -> dict[str, Any]:
         activity_data=recent_uploads,
         synced_at=synced_at,
         video_stats=video_details,
+        analytics=analytics_metrics,  # will be added to extended_data
     )
 
     videos: list[Video] = [
-        v for v in [_normalize_video(v, str(subject.id), synced_at) for v in video_details] if v is not None
+        v
+        for v in [_normalize_video(v, str(subject.id), synced_at) for v in video_details]
+        if v is not None
     ]
 
     try:

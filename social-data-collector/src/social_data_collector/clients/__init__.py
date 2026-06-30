@@ -2,11 +2,12 @@
 
 from .base import BaseHTTPClient, RetryPolicy
 from .facebook import FacebookClient
-from .youtube import YouTubeClient
+from .youtube import YouTubeAnalyticsClient, YouTubeClient
 
 __all__ = [
     "BaseHTTPClient",
     "FacebookClient",
     "RetryPolicy",
+    "YouTubeAnalyticsClient",
     "YouTubeClient",
 ]

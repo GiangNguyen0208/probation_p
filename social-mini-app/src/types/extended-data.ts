@@ -1,5 +1,17 @@
+export interface InsightMetricValue {
+  value: number;
+  end_time: string;
+}
+
+export interface InsightMetric {
+  name: string;
+  title: string;
+  period?: string;
+  values: InsightMetricValue[];
+}
+
 export interface FacebookExtendedData {
-  insights?: Record<string, unknown>;
+  insights?: Record<string, InsightMetric>;
   photos?: Record<string, unknown>[];
   videos?: Record<string, unknown>[];
   talking_about_count?: number;
@@ -24,6 +36,7 @@ export interface YouTubeExtendedData {
   sample_like_count?: number;
   sample_comment_count?: number;
   sample_engagement_rate?: number;
+  analytics?: InsightMetric[];
 }
 
 export function castFacebookExtended(
@@ -32,8 +45,13 @@ export function castFacebookExtended(
   if (!data) {
     return null;
   }
+  const insightsRaw = data.insights;
+  let insights: Record<string, InsightMetric> | undefined;
+  if (insightsRaw && typeof insightsRaw === "object" && !Array.isArray(insightsRaw)) {
+    insights = insightsRaw as Record<string, InsightMetric>;
+  }
   return {
-    insights: data.insights as Record<string, unknown> | undefined,
+    insights,
     photos: data.photos as Record<string, unknown>[] | undefined,
     videos: data.videos as Record<string, unknown>[] | undefined,
     talking_about_count: Number(data.talking_about_count) || undefined,
@@ -58,6 +76,11 @@ export function castYouTubeExtended(
   if (!data) {
     return null;
   }
+  const analyticsRaw = data.analytics;
+  let analytics: InsightMetric[] | undefined;
+  if (Array.isArray(analyticsRaw)) {
+    analytics = analyticsRaw as InsightMetric[];
+  }
   return {
     view_count: Number(data.view_count) || undefined,
     sample_video_count: Number(data.sample_video_count) || undefined,
@@ -65,5 +88,46 @@ export function castYouTubeExtended(
     sample_like_count: Number(data.sample_like_count) || undefined,
     sample_comment_count: Number(data.sample_comment_count) || undefined,
     sample_engagement_rate: Number(data.sample_engagement_rate) || undefined,
+    analytics,
   };
+}
+
+export function getMetricLatestValue(metric?: InsightMetric): number | null {
+  if (!metric || !metric.values || metric.values.length === 0) {
+    return null;
+  }
+  const last = metric.values[metric.values.length - 1];
+  if (last.value === null || last.value === undefined) {
+    return null;
+  }
+  if (typeof last.value === "number") {
+    return last.value;
+  }
+  if (typeof last.value === "object") {
+    const vals = Object.values(last.value as Record<string, unknown>) as unknown[];
+    const sum = vals.reduce<number>((s, v) => s + (Number(v) || 0), 0);
+    return sum || null;
+  }
+  return null;
+}
+
+function _resolveValue(value: unknown): number {
+  if (value === null || value === undefined) {
+    return 0;
+  }
+  if (typeof value === "number") {
+    return value;
+  }
+  if (typeof value === "object") {
+    const vals = Object.values(value as Record<string, unknown>) as unknown[];
+    return vals.reduce<number>((s, v) => s + (Number(v) || 0), 0);
+  }
+  return Number(value) || 0;
+}
+
+export function getMetricSparklineData(metric?: InsightMetric): number[] {
+  if (!metric || !metric.values) {
+    return [];
+  }
+  return metric.values.map((v) => _resolveValue(v.value));
 }

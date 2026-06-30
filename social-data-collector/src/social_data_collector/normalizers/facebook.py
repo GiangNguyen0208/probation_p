@@ -16,6 +16,47 @@ from social_common.schemas import Subject
 
 from .base import BaseNormalizer, NormalizerError
 
+
+def normalize_facebook_insights(
+    raw_insights: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Transform raw Graph API insights response into a normalized dict.
+
+    Graph API returns metrics as a list of dicts, each with
+    ``name``, ``title``, ``period``, ``values`` (list of
+    ``{value, end_time}``).  This function converts that list to a
+    dict keyed by metric name for structured storage in
+    ``extended_data["insights"]``.
+
+    Input (from ``/{{page_id}}/insights``):
+        [{"name": "page_impressions", "title": "Page Impressions",
+          "period": "day", "values": [{"value": 150, "end_time": "..."}]}]
+
+    Output:
+        {"page_impressions": {"name": "page_impressions", "title": "...",
+          "period": "day", "values": [...]}}
+    """
+    result: dict[str, Any] = {}
+    for metric in raw_insights:
+        name = metric.get("name")
+        if not name:
+            continue
+        values = metric.get("values", [])
+        cleaned: list[dict[str, Any]] = []
+        for v in values:
+            end_time = v.get("end_time")
+            value = v.get("value")
+            if end_time is not None and value is not None:
+                cleaned.append({"value": value, "end_time": end_time})
+        result[name] = {
+            "name": name,
+            "title": metric.get("title") or name,
+            "period": metric.get("period"),
+            "values": cleaned,
+        }
+    return result
+
+
 # Rolling window for activity frequency calculation. Matches the
 # `activity_frequency` field semantics in social-common.
 _ACTIVITY_WINDOW_DAYS = 30

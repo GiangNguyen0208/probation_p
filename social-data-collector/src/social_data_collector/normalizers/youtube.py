@@ -1,5 +1,9 @@
-"""YouTube Data API v3 client.
-...
+"""YouTube normalizer.
+
+Maps YouTube Data API v3 and Analytics API v2 responses to the
+unified Subject schema.  Analytics data is pivoted from the
+column/row format into a metric-keyed dict stored in
+``extended_data["analytics"]``.
 """
 
 from __future__ import annotations
@@ -11,6 +15,63 @@ from social_common.enums import Platform, SubjectStatus
 from social_common.schemas import Subject
 
 from .base import BaseNormalizer, NormalizerError
+
+# Labels matching the Analytics API metric names.
+_ANALYTIC_LABELS: dict[str, str] = {
+    "views": "Views",
+    "estimatedMinutesWatched": "Watch Time (min)",
+    "subscribersGained": "Subscribers Gained",
+    "subscribersLost": "Subscribers Lost",
+    "likes": "Likes",
+    "comments": "Comments",
+    "shares": "Shares",
+}
+
+
+def pivot_analytics(json: dict[str, Any]) -> list[dict[str, Any]]:
+    """Pivot YouTube Analytics API column/row format → unified insight list.
+
+    The Analytics API returns results in column/row format::
+
+        {
+          "columnHeaders": [{"name": "day"}, {"name": "views"}, ...],
+          "rows": [["2026-06-01", 150, ...], ...]
+        }
+
+    This function pivots to the same shape used by Facebook insights::
+
+        [
+          {"name": "views", "title": "Views",
+           "values": [{"value": 150, "end_time": "2026-06-01"}, ...]},
+          ...
+        ]
+    """
+    headers = json.get("columnHeaders", [])
+    rows = json.get("rows", [])
+    if not headers or not rows:
+        return []
+
+    day_idx = next((i for i, h in enumerate(headers) if h["name"] == "day"), -1)
+    metrics: list[dict[str, Any]] = []
+
+    for idx, header in enumerate(headers):
+        if idx == day_idx:
+            continue
+        name = header["name"]
+        title = _ANALYTIC_LABELS.get(name, name)
+        values: list[dict[str, Any]] = []
+        for row in rows:
+            if day_idx >= 0 and idx < len(row):
+                values.append(
+                    {
+                        "value": row[idx],
+                        "end_time": row[day_idx] if day_idx < len(row) else None,
+                    }
+                )
+        metrics.append({"name": name, "title": title, "values": values})
+
+    return metrics
+
 
 _ACTIVITY_WINDOW_DAYS = 30
 
@@ -74,6 +135,7 @@ class YouTubeNormalizer(BaseNormalizer):
         activity_data: list[dict[str, Any]],
         synced_at: datetime,
         video_stats: list[dict[str, Any]] | None = None,
+        analytics: list[dict[str, Any]] | None = None,
     ) -> Subject:
         if synced_at.tzinfo is None:
             synced_at = synced_at.replace(tzinfo=UTC)
@@ -131,6 +193,9 @@ class YouTubeNormalizer(BaseNormalizer):
                     sample_totals["like_count"] + sample_totals["comment_count"]
                 ) / sample_totals["view_count"]
                 extended_data["sample_engagement_rate"] = round(engagement, 6)
+
+        if analytics:
+            extended_data["analytics"] = analytics
 
         return Subject(
             platform=Platform.YOUTUBE,
