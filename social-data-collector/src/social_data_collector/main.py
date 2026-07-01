@@ -26,8 +26,10 @@ from .persistence.models import PlatformModel, SubjectModel
 from .persistence.repository import run_in_transaction
 from .scheduler.tasks import (
     sync_all_facebook_subjects,
+    sync_all_tiktok_subjects,
     sync_all_youtube_subjects,
     sync_facebook_subject,
+    sync_tiktok_subject,
     sync_youtube_subject,
 )
 
@@ -47,7 +49,8 @@ def _build_parser() -> argparse.ArgumentParser:
 
     subparsers.add_parser("sync-facebook", help="Sync all configured Facebook subjects once.")
     subparsers.add_parser("sync-youtube", help="Sync all configured YouTube subjects once.")
-    subparsers.add_parser("sync-all", help="Sync all configured subjects on both platforms once.")
+    subparsers.add_parser("sync-tiktok", help="Sync all configured TikTok subjects once.")
+    subparsers.add_parser("sync-all", help="Sync all configured subjects on all platforms once.")
     subparsers.add_parser("health", help="Print health check for DB and Redis.")
     subparsers.add_parser(
         "seed-subjects",
@@ -63,6 +66,9 @@ def _build_parser() -> argparse.ArgumentParser:
 
     yt_one = subparsers.add_parser("sync-youtube-one", help="Sync a single YouTube channel by ID.")
     yt_one.add_argument("channel_id")
+
+    tt_one = subparsers.add_parser("sync-tiktok-one", help="Sync a single TikTok user by open_id.")
+    tt_one.add_argument("open_id")
 
     return parser
 
@@ -248,15 +254,21 @@ def main(argv: Sequence[str] | None = None) -> int:
         return sync_all_facebook_subjects()
     if command == "sync-youtube":
         return sync_all_youtube_subjects()
+    if command == "sync-tiktok":
+        return sync_all_tiktok_subjects()
     if command == "sync-all":
         rc = sync_all_facebook_subjects()
         rc |= sync_all_youtube_subjects()
+        rc |= sync_all_tiktok_subjects()
         return rc
     if command == "sync-facebook-one":
         sync_facebook_subject(args.page_id)
         return 0
     if command == "sync-youtube-one":
         sync_youtube_subject(args.channel_id)
+        return 0
+    if command == "sync-tiktok-one":
+        sync_tiktok_subject(args.open_id)
         return 0
     if command == "health":
         return _handle_health(logger)

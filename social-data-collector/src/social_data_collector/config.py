@@ -95,11 +95,25 @@ class YouTubeSettings(BaseSettings):
         return bool(self.api_key.get_secret_value())
 
 
+class TikTokSettings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_prefix="TIKTOK_", env_file_encoding="utf-8", extra="ignore"
+    )
+    client_key: str = ""
+    client_secret: SecretStr = SecretStr("")
+    test_open_id: str = ""
+
+    @property
+    def has_credentials(self) -> bool:
+        return bool(self.client_key)
+
+
 class SyncSettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="SYNC_", env_file_encoding="utf-8", extra="ignore")
 
     facebook_enabled: bool = True
     youtube_enabled: bool = True
+    tiktok_enabled: bool = False
     # Beat schedule interval (minutes). 60 min = safe up to 100 subjects
     # per the Phase 0 quota worksheet (4,800 units/day, 10,000 default).
     default_interval_minutes: int = 60
@@ -127,6 +141,7 @@ class Settings(BaseSettings):
     redis: RedisSettings = Field(default_factory=RedisSettings)  # type: ignore[arg-type]
     facebook: FacebookSettings = Field(default_factory=FacebookSettings)
     youtube: YouTubeSettings = Field(default_factory=YouTubeSettings)
+    tiktok: TikTokSettings = Field(default_factory=TikTokSettings)
     sync: SyncSettings = Field(default_factory=SyncSettings)
     runtime: RuntimeSettings = Field(default_factory=RuntimeSettings)
 

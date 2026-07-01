@@ -189,7 +189,10 @@ async def create_credential(
     slug = platform.slug.upper()
     platform_enum = getattr(Platform, slug, None)
     platform_id_value = str(
-        raw_credentials.get("page_id") or raw_credentials.get("channel_id") or ""
+        raw_credentials.get("page_id")
+        or raw_credentials.get("channel_id")
+        or raw_credentials.get("open_id")
+        or ""
     )
 
     subject = SubjectModel(

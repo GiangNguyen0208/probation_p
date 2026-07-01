@@ -221,11 +221,55 @@ class YouTubeAnalyticsClient:
     than raising — this lets callers degrade gracefully when only an API
     key is configured.
 
+    When ``refresh_token``, ``client_id``, and ``client_secret`` are
+    provided, the client automatically refreshes the access token on
+    401 and retries once.
+
     Reference: https://developers.google.com/youtube/analytics/reference/reports
     """
 
-    def __init__(self, access_token: str | None = None) -> None:
+    _TOKEN_URL = "https://oauth2.googleapis.com/token"
+
+    def __init__(
+        self,
+        access_token: str | None = None,
+        refresh_token: str | None = None,
+        client_id: str | None = None,
+        client_secret: str | None = None,
+    ) -> None:
         self._access_token = access_token
+        self._refresh_token = refresh_token
+        self._client_id = client_id
+        self._client_secret = client_secret
+
+    def _refresh_access_token(self) -> bool:
+        """Exchange refresh_token for a new access_token.
+
+        Returns True on success (updates ``self._access_token``).
+        Returns False when refresh is not configured or fails.
+        """
+        if not all([self._refresh_token, self._client_id, self._client_secret]):
+            return False
+        try:
+            response = httpx.post(
+                self._TOKEN_URL,
+                data={
+                    "grant_type": "refresh_token",
+                    "refresh_token": self._refresh_token,
+                    "client_id": self._client_id,
+                    "client_secret": self._client_secret,
+                },
+                timeout=15.0,
+            )
+            response.raise_for_status()
+            body = response.json()
+            new_token = body.get("access_token")
+            if new_token:
+                self._access_token = new_token
+                return True
+            return False
+        except httpx.HTTPError:
+            return False
 
     def get_channel_insights(
         self,
@@ -261,17 +305,21 @@ class YouTubeAnalyticsClient:
             "sort": "day",
         }
 
-        try:
-            response = httpx.get(
-                f"{ANALYTICS_BASE_URL}/reports",
-                params=params,
-                headers={"Authorization": f"Bearer {self._access_token}"},
-                timeout=30.0,
-            )
-            if response.status_code == 401:
-                # Token expired — caller should refresh and retry on next cycle.
+        for attempt in range(2):
+            try:
+                response = httpx.get(
+                    f"{ANALYTICS_BASE_URL}/reports",
+                    params=params,
+                    headers={"Authorization": f"Bearer {self._access_token}"},
+                    timeout=30.0,
+                )
+                if response.status_code == 401 and attempt == 0:
+                    if self._refresh_access_token():
+                        continue
+                    return {"columnHeaders": [], "rows": []}
+                response.raise_for_status()
+                return cast("dict[str, Any]", response.json())
+            except httpx.HTTPError:
                 return {"columnHeaders": [], "rows": []}
-            response.raise_for_status()
-            return cast("dict[str, Any]", response.json())
-        except httpx.HTTPError:
-            return {"columnHeaders": [], "rows": []}
+
+        return {"columnHeaders": [], "rows": []}

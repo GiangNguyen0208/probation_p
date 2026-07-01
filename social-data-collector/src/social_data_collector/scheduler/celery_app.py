@@ -54,6 +54,12 @@ if _settings.sync.youtube_enabled:
         "schedule": crontab(minute=f"*/{_interval}"),
     }
 
+if _settings.sync.tiktok_enabled:
+    _beat_schedule["sync-tiktok-cycle"] = {
+        "task": "social_data_collector.scheduler.tasks.sync_all_tiktok_subjects",
+        "schedule": crontab(minute=f"*/{_interval}"),
+    }
+
 celery_app.conf.beat_schedule = _beat_schedule
 
 

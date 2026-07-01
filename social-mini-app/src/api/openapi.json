@@ -1333,7 +1333,8 @@
         "type": "string",
         "enum": [
           "facebook",
-          "youtube"
+          "youtube",
+          "tiktok"
         ],
         "title": "Platform",
         "description": "Source platform for a subject. Extensible to new platforms (e.g. tiktok)."

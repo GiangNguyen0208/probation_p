@@ -92,6 +92,33 @@ export function castYouTubeExtended(
   };
 }
 
+export interface TikTokExtendedData {
+  following_count?: number;
+  likes_count?: number;
+  video_count?: number;
+  is_verified?: boolean;
+  avatar_url?: string;
+  display_name?: string;
+  username?: string;
+}
+
+export function castTikTokExtended(
+  data: Record<string, unknown> | null | undefined,
+): TikTokExtendedData | null {
+  if (!data) {
+    return null;
+  }
+  return {
+    following_count: Number(data.following_count) || undefined,
+    likes_count: Number(data.likes_count) || undefined,
+    video_count: Number(data.video_count) || undefined,
+    is_verified: Boolean(data.is_verified) || undefined,
+    avatar_url: String(data.avatar_url) || undefined,
+    display_name: String(data.display_name) || undefined,
+    username: String(data.username) || undefined,
+  };
+}
+
 export function getMetricLatestValue(metric?: InsightMetric): number | null {
   if (!metric || !metric.values || metric.values.length === 0) {
     return null;

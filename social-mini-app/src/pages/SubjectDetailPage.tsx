@@ -6,6 +6,7 @@ import { AlertConfigPanel } from "../components/panels/AlertConfigPanel";
 import { AlertHistoryPanel } from "../components/panels/AlertHistoryPanel";
 import { FacebookEngagementPanel } from "../components/panels/FacebookEngagementPanel";
 import { FollowerChart } from "../components/charts/FollowerChart";
+import { TikTokEngagementPanel } from "../components/panels/TikTokEngagementPanel";
 import { YouTubeEngagementPanel } from "../components/panels/YouTubeEngagementPanel";
 import StateViews from "../components/state/StateViews";
 import { useTelegram } from "../telegram/useTelegram";
@@ -21,6 +22,7 @@ import { Section } from "../components/ui/Section";
 const platformColors: Record<string, string> = {
   facebook: "#1877f2",
   youtube: "#ff0000",
+  tiktok: "#000000",
 };
 
 const statusVariant: Record<string, "success" | "warning" | "danger"> = {
@@ -95,7 +97,7 @@ export default function SubjectDetailPage() {
               {subject.display_name}
             </h2>
             <p className="text-xs" style={{ color: "var(--tg-hint-color)" }}>
-              {subject.platform === "facebook" ? t("dashboard.facebook") : t("dashboard.youtube")} · {subject.platform_id}
+              {subject.platform === "facebook" ? t("dashboard.facebook") : subject.platform === "youtube" ? t("dashboard.youtube") : t("dashboard.tiktok")} · {subject.platform_id}
             </p>
           </div>
           <Badge variant={variant}>{t(statusTKey)}</Badge>
@@ -119,6 +121,8 @@ export default function SubjectDetailPage() {
 
       {subject.platform === "youtube" ? (
         <YouTubeEngagementPanel subject={subject} />
+      ) : subject.platform === "tiktok" ? (
+        <TikTokEngagementPanel subject={subject} />
       ) : (
         <FacebookEngagementPanel subject={subject} />
       )}

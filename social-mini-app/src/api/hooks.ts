@@ -117,6 +117,7 @@ export interface DashboardStats {
   totalSubjects: number;
   facebookCount: number;
   youtubeCount: number;
+  tiktokCount: number;
   mostActivePlatform: string;
   lastSyncTimestamp: string | null;
 }
@@ -145,17 +146,21 @@ export function useDashboardStats() {
       }
       const facebook = allSubjects.filter((s) => s.platform === "facebook");
       const youtube = allSubjects.filter((s) => s.platform === "youtube");
+      const tiktok = allSubjects.filter((s) => s.platform === "tiktok");
       const fbFreq = facebook.reduce((sum, s) => sum + s.activity_frequency, 0);
       const ytFreq = youtube.reduce((sum, s) => sum + s.activity_frequency, 0);
+      const ttFreq = tiktok.reduce((sum, s) => sum + s.activity_frequency, 0);
       const lastSync = allSubjects.reduce(
         (latest, s) => (!latest || s.last_synced_at > latest ? s.last_synced_at : latest),
         "" as string,
       );
+      const maxFreq = Math.max(fbFreq, ytFreq, ttFreq);
       return {
         totalSubjects: allSubjects.length,
         facebookCount: facebook.length,
         youtubeCount: youtube.length,
-        mostActivePlatform: fbFreq >= ytFreq ? "facebook" : "youtube",
+        tiktokCount: tiktok.length,
+        mostActivePlatform: maxFreq === fbFreq ? "facebook" : maxFreq === ytFreq ? "youtube" : "tiktok",
         lastSyncTimestamp: lastSync || null,
       };
     },

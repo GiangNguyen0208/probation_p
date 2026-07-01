@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useTranslation } from "../../i18n";
 import type { TranslationKey } from "../../i18n";
 import { Section } from "../ui/Section";
+import { Sparkline } from "../ui/Sparkline";
 import { MetricCard } from "../ui/MetricCard";
 import { formatCompact, resolveColor } from "../../utils/format";
 import { castYouTubeExtended, getMetricLatestValue, getMetricSparklineData } from "../../types/extended-data";
@@ -11,9 +12,12 @@ type Subject = components["schemas"]["Subject"];
 
 const ANALYTIC_DISPLAY = [
   { key: "views", labelKey: "insights.viewsPerDay" },
+  { key: "estimatedMinutesWatched", labelKey: "insights.estMinutesWatched" },
   { key: "subscribersGained", labelKey: "insights.subscribersGained" },
+  { key: "subscribersLost", labelKey: "insights.subscribersLost" },
   { key: "likes", labelKey: "insights.likes" },
   { key: "comments", labelKey: "insights.comments" },
+  { key: "shares", labelKey: "insights.shares" },
 ] as const;
 
 function AnalyticCard({ metric, label }: { metric?: { name: string; title: string; values: { value: number; end_time: string }[] }; label: string }) {
@@ -28,26 +32,7 @@ function AnalyticCard({ metric, label }: { metric?: { name: string; title: strin
         {latestValue !== null ? formatCompact(latestValue) : "\u2014"}
       </span>
       {sparklineData.length > 1 && (
-        <svg width={80} height={28} viewBox="0 0 80 28" className="w-full" preserveAspectRatio="none">
-          {(() => {
-            const max = Math.max(...sparklineData);
-            const min = Math.min(...sparklineData);
-            const range = max - min || 1;
-            const bw = 80 / sparklineData.length;
-            return sparklineData.map((v, i) => (
-              <rect
-                key={i}
-                x={i * bw}
-                y={28 - ((v - min) / range) * 28}
-                width={Math.max(bw - 0.5, 1)}
-                height={((v - min) / range) * 28}
-                fill={accentColor}
-                opacity={0.5}
-                rx={1}
-              />
-            ));
-          })()}
-        </svg>
+        <Sparkline data={sparklineData} color={accentColor} />
       )}
     </div>
   );

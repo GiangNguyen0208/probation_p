@@ -9,7 +9,7 @@ export type TranslationKey =
   | "settings.language" | "settings.selectLanguage" | "settings.english" | "settings.vietnamese"
   | "settings.account" | "settings.loggedInAs" | "settings.logout" | "settings.authFallback"
   | "dashboard.title" | "dashboard.overview" | "dashboard.totalSubjects" | "dashboard.mostActive"
-  | "dashboard.facebook" | "dashboard.youtube" | "dashboard.tracked" | "dashboard.lastSync"
+  | "dashboard.facebook" | "dashboard.youtube" | "dashboard.tiktok" | "dashboard.tracked" | "dashboard.lastSync"
   | "dashboard.browseSubjects"
   | "subjects.title" | "subjects.noResults" | "subjects.resetFilters"
   | "subject.metrics" | "subject.followers" | "subject.posts" | "subject.activity" | "subject.lastSync"
@@ -37,7 +37,10 @@ export type TranslationKey =
   | "alert.followerDrop" | "alert.followerGrowthLabel" | "alert.activityDrop"
   | "insights.title" | "insights.impressions" | "insights.reach" | "insights.pageViews" | "insights.engagements"
   | "insights.reactions" | "insights.follows" | "insights.pageFans"
-  | "insights.viewsPerDay" | "insights.subscribersGained" | "insights.likes" | "insights.comments";
+  | "insights.viewsPerDay" | "insights.estMinutesWatched"
+  | "insights.subscribersGained" | "insights.subscribersLost"
+  | "insights.likes" | "insights.comments" | "insights.shares"
+  | "insights.tiktokFollowers" | "insights.tiktokFollowing" | "insights.tiktokLikes" | "insights.tiktokVideos";
 
 export type Translations = Record<TranslationKey, string>;
 
@@ -84,6 +87,7 @@ export const en: Translations = {
   "dashboard.mostActive": "Most Active",
   "dashboard.facebook": "Facebook",
   "dashboard.youtube": "YouTube",
+  "dashboard.tiktok": "TikTok",
   "dashboard.tracked": "{count} tracked",
   "dashboard.lastSync": "Last sync: {time}",
   "dashboard.browseSubjects": "Browse Subjects",
@@ -189,9 +193,16 @@ export const en: Translations = {
   "insights.follows": "New Follows",
   "insights.pageFans": "Total Followers",
   "insights.viewsPerDay": "Views/Day",
+  "insights.estMinutesWatched": "Watch Time (min)",
   "insights.subscribersGained": "New Subs",
+  "insights.subscribersLost": "Lost Subs",
   "insights.likes": "Likes",
+  "insights.shares": "Shares",
   "insights.comments": "Comments",
+  "insights.tiktokFollowers": "Followers",
+  "insights.tiktokFollowing": "Following",
+  "insights.tiktokLikes": "Likes",
+  "insights.tiktokVideos": "Videos",
 };
 
 export const vi: Translations = {
@@ -237,6 +248,7 @@ export const vi: Translations = {
   "dashboard.mostActive": "Nhiều nhất",
   "dashboard.facebook": "Facebook",
   "dashboard.youtube": "YouTube",
+  "dashboard.tiktok": "TikTok",
   "dashboard.tracked": "{count} theo dõi",
   "dashboard.lastSync": "Đồng bộ: {time}",
   "dashboard.browseSubjects": "Xem chủ đề",
@@ -342,7 +354,14 @@ export const vi: Translations = {
   "insights.follows": "Theo dõi mới",
   "insights.pageFans": "Tổng người theo dõi",
   "insights.viewsPerDay": "Lượt xem/Ngày",
+  "insights.estMinutesWatched": "Thời gian xem (ph)",
   "insights.subscribersGained": "Sub mới",
+  "insights.subscribersLost": "Mất sub",
   "insights.likes": "Lượt thích",
+  "insights.shares": "Chia sẻ",
   "insights.comments": "Bình luận",
+  "insights.tiktokFollowers": "Người theo dõi",
+  "insights.tiktokFollowing": "Đang theo dõi",
+  "insights.tiktokLikes": "Lượt thích",
+  "insights.tiktokVideos": "Video",
 };

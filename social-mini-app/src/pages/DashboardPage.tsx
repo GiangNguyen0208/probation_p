@@ -41,14 +41,18 @@ export default function DashboardPage() {
           <KpiCard
             label={t("dashboard.mostActive")}
             value={
-              data.mostActivePlatform === "facebook" ? t("dashboard.facebook") : t("dashboard.youtube")
+              data.mostActivePlatform === "facebook" ? t("dashboard.facebook")
+                : data.mostActivePlatform === "youtube" ? t("dashboard.youtube")
+                : t("dashboard.tiktok")
             }
             subtitle={
               t("dashboard.tracked", {
                 count: formatCompact(
                   data.mostActivePlatform === "facebook"
                     ? data.facebookCount
-                    : data.youtubeCount,
+                    : data.mostActivePlatform === "youtube"
+                    ? data.youtubeCount
+                    : data.tiktokCount ?? 0,
                 ),
               })
             }
@@ -60,6 +64,10 @@ export default function DashboardPage() {
           <KpiCard
             label={t("dashboard.youtube")}
             value={formatCompact(data.youtubeCount)}
+          />
+          <KpiCard
+            label={t("dashboard.tiktok")}
+            value={formatCompact(data.tiktokCount ?? 0)}
           />
         </div>
       </Section>

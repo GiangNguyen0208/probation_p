@@ -24,10 +24,12 @@ from sqlalchemy import select
 
 from ..clients.base import RetryPolicy
 from ..clients.facebook import FacebookClient
+from ..clients.tiktok import TikTokClient
 from ..clients.youtube import YouTubeAnalyticsClient, YouTubeClient
 from ..config import get_settings
 from ..logging_setup import get_logger
 from ..normalizers.facebook import FacebookNormalizer, normalize_facebook_insights
+from ..normalizers.tiktok import TikTokNormalizer
 from ..normalizers.youtube import YouTubeNormalizer, pivot_analytics
 from ..persistence.credential_resolver import resolve_credential
 from ..persistence.models import SubjectModel
@@ -279,8 +281,14 @@ def _normalize_video(item: dict[str, Any], subject_id: str, synced_at: datetime)
     )
 
 
-def _lookup_youtube_oauth_token(channel_id: str) -> str | None:
-    """Look up a per-subject YouTube OAuth access token from stored credentials."""
+def _lookup_youtube_oauth_creds(channel_id: str) -> dict[str, str] | None:
+    """Look up per-subject YouTube OAuth credentials from stored credentials.
+
+    Returns a dict with keys ``access_token``, ``refresh_token``,
+    ``client_id``, ``client_secret``, or ``None`` when no credential
+    is linked.  The caller passes these as ``**kwargs`` to
+    ``YouTubeAnalyticsClient``.
+    """
     subject = run_in_transaction(
         lambda s: s.execute(
             select(SubjectModel).where(
@@ -294,8 +302,9 @@ def _lookup_youtube_oauth_token(channel_id: str) -> str | None:
     decrypted = resolve_credential(subject.credential_id)
     if decrypted is None:
         return None
-    token = decrypted.get("access_token")
-    if not token:
+    _OAUTH_KEYS = frozenset({"access_token", "refresh_token", "client_id", "client_secret"})
+    subset = {k: str(v) for k, v in decrypted.items() if k in _OAUTH_KEYS and v}
+    if not subset.get("access_token"):
         logger.warning(
             "sync.credential.missing_field",
             platform="youtube",
@@ -303,7 +312,7 @@ def _lookup_youtube_oauth_token(channel_id: str) -> str | None:
             credential_id=str(subject.credential_id),
             field="access_token",
         )
-    return token
+    return subset
 
 
 def _lookup_youtube_api_key(channel_id: str) -> str | None:
@@ -377,9 +386,9 @@ def sync_youtube_subject(channel_id: str) -> dict[str, Any]:
         # YouTube Analytics (OAuth-optional): fetch time-series insights.
         analytics_raw: dict[str, Any] = {}
         analytics_metrics: list[dict[str, Any]] = []
-        oauth_token = _lookup_youtube_oauth_token(channel_id)
-        if oauth_token:
-            analytics_client = YouTubeAnalyticsClient(access_token=oauth_token)
+        oauth_creds = _lookup_youtube_oauth_creds(channel_id)
+        if oauth_creds and oauth_creds.get("access_token"):
+            analytics_client = YouTubeAnalyticsClient(**oauth_creds)
             analytics_raw = analytics_client.get_channel_insights(channel_id)
             analytics_metrics = pivot_analytics(analytics_raw)
             if analytics_metrics:
@@ -460,6 +469,156 @@ def sync_youtube_subject(channel_id: str) -> dict[str, Any]:
         "status": "ok",
         "video_count": len(videos),
     }
+
+
+def _tiktok_targets() -> list[str]:
+    settings = get_settings()
+    if not settings.sync.tiktok_enabled:
+        logger.warning("sync.tiktok.disabled")
+        return []
+
+    db_targets = _db_targets(Platform.TIKTOK)
+    if db_targets:
+        return db_targets
+
+    if settings.tiktok.test_open_id:
+        return [settings.tiktok.test_open_id]
+    return []
+
+
+def _lookup_tiktok_credentials(open_id: str) -> dict[str, Any] | None:
+    """Look up per-subject TikTok credentials from the DB.
+
+    Returns the full decrypted credential dict (access_token,
+    refresh_token, client_key, client_secret).
+    """
+    subject = run_in_transaction(
+        lambda s: s.execute(
+            select(SubjectModel).where(
+                SubjectModel.platform == Platform.TIKTOK,
+                SubjectModel.platform_id == open_id,
+            )
+        ).scalar_one_or_none()
+    )
+    if subject is None or subject.credential_id is None:
+        return None
+    decrypted = resolve_credential(subject.credential_id)
+    if decrypted is None:
+        return None
+    token = decrypted.get("access_token")
+    if not token:
+        logger.warning(
+            "sync.credential.missing_field",
+            platform="tiktok",
+            open_id=open_id,
+            credential_id=str(subject.credential_id),
+            field="access_token",
+        )
+    return decrypted
+
+
+@shared_task(  # type: ignore[untyped-decorator]
+    name="social_data_collector.scheduler.tasks.sync_tiktok_subject",
+    autoretry_for=(TransientPlatformError,),
+    retry_backoff=True,
+    retry_backoff_max=3600,
+    retry_jitter=True,
+    max_retries=5,
+)
+def sync_tiktok_subject(open_id: str) -> dict[str, Any]:
+    logger.info("sync.start", platform="tiktok", open_id=open_id)
+    settings = get_settings()
+    retry_policy = _retry_policy()
+    synced_at = _now()
+
+    creds = _lookup_tiktok_credentials(open_id)
+    if not creds or not creds.get("access_token"):
+        logger.error(
+            "sync.no_credentials",
+            platform="tiktok",
+            open_id=open_id,
+        )
+        return {"platform": "tiktok", "open_id": open_id, "status": "no_credentials"}
+
+    access_token = str(creds["access_token"])
+
+    try:
+        with TikTokClient(
+            access_token=access_token,
+            retry_policy=retry_policy,
+        ) as client:
+            user_info = client.get_user_info(open_id)
+            videos = client.get_video_list(open_id, max_count=settings.sync.activity_sample_size)
+    except SubjectNotFoundError as exc:
+        logger.error(
+            "sync.subject_not_found", platform="tiktok", open_id=open_id, error=str(exc)
+        )
+        return {"platform": "tiktok", "open_id": open_id, "status": "subject_not_found"}
+    except PermanentPlatformError as exc:
+        logger.error(
+            "sync.permanent_failure", platform="tiktok", open_id=open_id, error=str(exc)
+        )
+        return {
+            "platform": "tiktok",
+            "open_id": open_id,
+            "status": "permanent_failure",
+            "error": str(exc),
+        }
+    except TransientPlatformError as exc:
+        logger.warning(
+            "sync.quota_or_transient", platform="tiktok", open_id=open_id, error=str(exc)
+        )
+        raise
+
+    normalizer = TikTokNormalizer()
+    subject = normalizer.normalize(
+        platform_id=open_id,
+        raw_response=user_info,
+        activity_data=videos,
+        synced_at=synced_at,
+    )
+
+    try:
+        subject_id = run_in_transaction(lambda s: sync_subject(s, subject))
+    except Exception as exc:  # noqa: BLE001
+        logger.error(
+            "sync.persistence_error", platform="tiktok", open_id=open_id, error=str(exc)
+        )
+        raise
+
+    logger.info(
+        "sync.success",
+        platform="tiktok",
+        open_id=open_id,
+        subject_id=str(subject_id),
+        followers=subject.followers,
+        activity_frequency=subject.activity_frequency,
+        video_count=len(videos),
+    )
+
+    _trigger_alert_evaluation(str(subject_id))
+
+    return {
+        "platform": "tiktok",
+        "open_id": open_id,
+        "subject_id": str(subject_id),
+        "status": "ok",
+        "video_count": len(videos),
+    }
+
+
+def sync_all_tiktok_subjects() -> int:
+    targets = _tiktok_targets()
+    failures = 0
+    for open_id in targets:
+        try:
+            sync_tiktok_subject(open_id)
+        except Exception as exc:  # noqa: BLE001
+            failures += 1
+            logger.error(
+                "sync.cli.failure", platform="tiktok", open_id=open_id, error=str(exc)
+            )
+    return 0 if failures == 0 else 1
 
 
 def _trigger_alert_evaluation(subject_id: str) -> None:

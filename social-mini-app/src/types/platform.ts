@@ -5,11 +5,13 @@ export type Subject = components["schemas"]["Subject"];
 export const platformLabels: Record<string, string> = {
   facebook: "Facebook",
   youtube: "YouTube",
+  tiktok: "TikTok",
 };
 
 export const platformColors: Record<string, string> = {
   facebook: "#1877f2",
   youtube: "#ff0000",
+  tiktok: "#000000",
 };
 
 export const statusConfig: Record<

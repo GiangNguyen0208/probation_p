@@ -4,10 +4,11 @@ from enum import StrEnum
 
 
 class Platform(StrEnum):
-    """Source platform for a subject. Extensible to new platforms (e.g. tiktok)."""
+    """Source platform for a subject."""
 
     FACEBOOK = "facebook"
     YOUTUBE = "youtube"
+    TIKTOK = "tiktok"
 
 
 class SubjectStatus(StrEnum):

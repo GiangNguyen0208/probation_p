@@ -384,7 +384,7 @@ export interface components {
          * @description Source platform for a subject. Extensible to new platforms (e.g. tiktok).
          * @enum {string}
          */
-        Platform: "facebook" | "youtube";
+        Platform: "facebook" | "youtube" | "tiktok";
         /** ResponseEnvelope[AlertRule] */
         ResponseEnvelope_AlertRule_: {
             data: components["schemas"]["AlertRule"];
