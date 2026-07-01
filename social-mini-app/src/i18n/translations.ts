@@ -13,7 +13,7 @@ export type TranslationKey =
   | "dashboard.facebook" | "dashboard.youtube" | "dashboard.tiktok" | "dashboard.tracked" | "dashboard.lastSync"
   | "dashboard.browseSubjects" | "dashboard.networkHealth" | "dashboard.systemActive" | "dashboard.live"
   | "subjects.title" | "subjects.search" | "subjects.noResults" | "subjects.resetFilters"
-  | "subjects.platformAll" | "subjects.statusAll" | "subjects.statusActive" | "subjects.statusInactive" | "subjects.statusSuspended"
+  | "subjects.platformAll" | "subjects.statusAll" | "subjects.statusActive" | "subjects.statusInactive" | "subjects.statusSuspended" | "subjects.statusHighGrowth"
   | "subjects.loaded"
   | "subject.metrics" | "subject.followers" | "subject.posts" | "subject.activity" | "subject.lastSync"
   | "subject.followerGrowth" | "subject.activityFrequency"
@@ -119,6 +119,7 @@ export const en: Translations = {
   "subjects.statusActive": "Active",
   "subjects.statusInactive": "Inactive",
   "subjects.statusSuspended": "Suspended",
+  "subjects.statusHighGrowth": "High Growth",
   "subjects.loaded": "{count} subjects loaded",
 
   "subject.metrics": "Metrics",
@@ -303,6 +304,7 @@ export const vi: Translations = {
   "subjects.statusActive": "Hoạt động",
   "subjects.statusInactive": "Không hoạt động",
   "subjects.statusSuspended": "Đã đình chỉ",
+  "subjects.statusHighGrowth": "Tăng trưởng cao",
   "subjects.loaded": "{count} chủ đề đã tải",
 
   "subject.metrics": "Chỉ số",

@@ -302,8 +302,11 @@ def _lookup_youtube_oauth_creds(channel_id: str) -> dict[str, str] | None:
     decrypted = resolve_credential(subject.credential_id)
     if decrypted is None:
         return None
-    _OAUTH_KEYS = frozenset({"access_token", "refresh_token", "client_id", "client_secret"})
-    subset = {k: str(v) for k, v in decrypted.items() if k in _OAUTH_KEYS and v}
+    _oauth_keys = frozenset({"access_token", "refresh_token", "client_id", "client_secret"})
+    subset = {k: str(v) for k, v in decrypted.items() if k in _oauth_keys and v}
+    if not subset:
+        # No OAuth fields at all — API-key-only credential, not an error.
+        return None
     if not subset.get("access_token"):
         logger.warning(
             "sync.credential.missing_field",

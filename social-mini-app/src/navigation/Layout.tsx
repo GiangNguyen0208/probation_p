@@ -46,10 +46,12 @@ function LayoutContent() {
         id="main-scroll"
         style={{
           paddingTop: topBarHeight,
-          paddingBottom: isDetail ? "var(--tg-content-safe-area-inset-bottom)" : undefined,
+          paddingBottom: isDetail
+            ? "calc(84px + var(--tg-content-safe-area-inset-bottom, 0px) + 16px)"
+            : "calc(64px + var(--tg-safe-area-inset-bottom, 0px) + 16px)",
         }}
       >
-        <div className="px-4 pb-6 mx-auto" style={{ maxWidth: "480px" }}>
+        <div className="px-4 pb-4 mx-auto" style={{ maxWidth: "480px" }}>
           <Outlet />
         </div>
       </main>

@@ -71,18 +71,28 @@ export default function SubjectDetailPage() {
       <>
         <PageHeader icon="school" title="Loading..." />
         <div className="space-y-3" aria-busy="true" role="status">
-          <div className="rounded-xl p-4 glass-card animate-pulse">
+          <div
+            className="rounded-xl p-4"
+            style={{ backgroundColor: "var(--si-surface)", border: "1px solid var(--si-border)" }}
+          >
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-surface-container-highest shrink-0" />
+              <div
+                className="w-16 h-16 rounded-full shrink-0"
+                style={{ backgroundColor: "var(--si-surface-highest)" }}
+              />
               <div className="flex-1 space-y-2">
-                <div className="h-5 w-40 rounded bg-surface-container-highest" />
-                <div className="h-4 w-24 rounded bg-surface-container-highest" />
+                <div className="h-5 w-40 rounded" style={{ backgroundColor: "var(--si-surface-highest)" }} />
+                <div className="h-4 w-24 rounded" style={{ backgroundColor: "var(--si-surface-highest)" }} />
               </div>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-24 rounded-xl glass-card animate-pulse" />
+              <div
+                key={i}
+                className="h-24 rounded-xl"
+                style={{ backgroundColor: "var(--si-surface)", border: "1px solid var(--si-border)" }}
+              />
             ))}
           </div>
         </div>
@@ -95,8 +105,8 @@ export default function SubjectDetailPage() {
       <>
         <PageHeader icon="school" title="Error" />
         <div className="flex flex-col items-center gap-3 py-12 text-center" role="alert">
-          <span className="material-symbols-outlined text-error text-4xl">error</span>
-          <p className="text-body-md text-on-surface">{error?.message ?? t("subject.error")}</p>
+          <span className="material-symbols-outlined text-4xl" style={{ color: "var(--si-danger)" }}>error</span>
+          <p className="text-sm" style={{ color: "var(--si-text-primary)" }}>{error?.message ?? t("subject.error")}</p>
           <Button variant="secondary" onClick={() => refetch()}>{t("common.retry")}</Button>
         </div>
       </>
@@ -108,8 +118,8 @@ export default function SubjectDetailPage() {
       <>
         <PageHeader icon="school" title="Not found" />
         <div className="flex flex-col items-center py-12 text-center">
-          <span className="material-symbols-outlined text-outline text-4xl">person_off</span>
-          <p className="text-body-md text-on-surface-variant mt-4">Subject not found</p>
+          <span className="material-symbols-outlined text-4xl" style={{ color: "var(--si-outline)" }}>person_off</span>
+          <p className="text-sm mt-4" style={{ color: "var(--si-text-secondary)" }}>Subject not found</p>
         </div>
       </>
     );
@@ -128,7 +138,7 @@ export default function SubjectDetailPage() {
         title={subject.display_name}
         actions={
           <button className="active:scale-95 transition-transform p-1">
-            <span className="material-symbols-outlined text-primary">search</span>
+            <span className="material-symbols-outlined" style={{ color: "var(--si-accent)" }}>search</span>
           </button>
         }
       />
@@ -137,25 +147,28 @@ export default function SubjectDetailPage() {
       <div className="mb-6">
         <GlassCard>
           <div className="flex items-center gap-4">
-            <div className="relative w-16 h-16 flex items-center justify-center bg-secondary-container rounded-full text-white font-bold text-2xl shadow-sm overflow-hidden shrink-0">
+            <div
+              className="relative w-16 h-16 flex items-center justify-center rounded-full text-white font-bold text-2xl shadow-sm overflow-hidden shrink-0"
+              style={{ backgroundColor: "var(--si-surface-elevated)" }}
+            >
               {avatarUrl ? (
                 <img src={avatarUrl} alt={subject.display_name} className="w-full h-full object-cover" />
               ) : (
                 initial
               )}
               <div
-                className="absolute bottom-1 right-1 w-3.5 h-3.5 border-2 border-white rounded-full"
-                style={{ backgroundColor: platformColor }}
+                className="absolute bottom-1 right-1 w-3.5 h-3.5 border-2 rounded-full"
+                style={{ backgroundColor: platformColor, borderColor: "var(--si-surface)" }}
               />
             </div>
             <div className="flex-1">
               <div className="flex items-center justify-between">
-                <h2 className="text-headline-md text-on-surface">{subject.display_name}</h2>
+                <h2 className="text-xl font-semibold" style={{ color: "var(--si-text-primary)" }}>{subject.display_name}</h2>
                 <StatusChip variant={status.variant} animate={subject.status === "active"}>
                   {t(`subject.${subject.status}`)}
                 </StatusChip>
               </div>
-              <p className="text-body-md text-on-surface-variant flex items-center gap-1 mt-0.5">
+              <p className="text-sm flex items-center gap-1 mt-0.5" style={{ color: "var(--si-text-secondary)" }}>
                 <span className="material-symbols-outlined text-[16px]">public</span>
                 {subject.platform === "facebook" ? "Facebook" : subject.platform === "youtube" ? "YouTube" : "TikTok"} &bull; ID: {subject.platform_id}
               </p>
@@ -168,25 +181,24 @@ export default function SubjectDetailPage() {
       <Section title={t("subject.metrics")} className="mb-6">
         <div className="grid grid-cols-2 gap-3">
           <GlassCard>
-            <span className="material-symbols-outlined text-primary text-[20px]">group</span>
-            <p className="text-label-md text-on-surface-variant mt-1">{t("subject.followers")}</p>
-            <p className="text-headline-md text-on-surface">{formatCompact(subject.followers)}</p>
-            
+            <span className="material-symbols-outlined text-[20px]" style={{ color: "var(--si-accent)" }}>group</span>
+            <p className="text-xs font-medium mt-1" style={{ color: "var(--si-text-tertiary)" }}>{t("subject.followers")}</p>
+            <p className="text-xl font-semibold" style={{ color: "var(--si-text-primary)" }}>{formatCompact(subject.followers)}</p>
           </GlassCard>
           <GlassCard>
-            <span className="material-symbols-outlined text-primary text-[20px]">post_add</span>
-            <p className="text-label-md text-on-surface-variant mt-1">{t("subject.posts")}</p>
-            <p className="text-headline-md text-on-surface">{formatCompact(subject.post_count)}</p>
+            <span className="material-symbols-outlined text-[20px]" style={{ color: "var(--si-accent)" }}>post_add</span>
+            <p className="text-xs font-medium mt-1" style={{ color: "var(--si-text-tertiary)" }}>{t("subject.posts")}</p>
+            <p className="text-xl font-semibold" style={{ color: "var(--si-text-primary)" }}>{formatCompact(subject.post_count)}</p>
           </GlassCard>
           <GlassCard>
-            <span className="material-symbols-outlined text-primary text-[20px]">show_chart</span>
-            <p className="text-label-md text-on-surface-variant mt-1">{t("subject.activity")}</p>
-            <p className="text-headline-md text-on-surface">{subject.activity_frequency.toFixed(1)}/d</p>
+            <span className="material-symbols-outlined text-[20px]" style={{ color: "var(--si-accent)" }}>show_chart</span>
+            <p className="text-xs font-medium mt-1" style={{ color: "var(--si-text-tertiary)" }}>{t("subject.activity")}</p>
+            <p className="text-xl font-semibold" style={{ color: "var(--si-text-primary)" }}>{subject.activity_frequency.toFixed(1)}/d</p>
           </GlassCard>
           <GlassCard>
-            <span className="material-symbols-outlined text-primary text-[20px]">sync</span>
-            <p className="text-label-md text-on-surface-variant mt-1">{t("subject.lastSync")}</p>
-            <p className="text-headline-md text-on-surface">{formatRelative(subject.last_synced_at)}</p>
+            <span className="material-symbols-outlined text-[20px]" style={{ color: "var(--si-accent)" }}>sync</span>
+            <p className="text-xs font-medium mt-1" style={{ color: "var(--si-text-tertiary)" }}>{t("subject.lastSync")}</p>
+            <p className="text-xl font-semibold" style={{ color: "var(--si-text-primary)" }}>{formatRelative(subject.last_synced_at)}</p>
           </GlassCard>
         </div>
       </Section>
@@ -204,11 +216,11 @@ export default function SubjectDetailPage() {
       {activity && activity.length > 0 && (
         <Section className="mb-6 space-y-4">
           <GlassCard>
-            <h3 className="text-label-md text-on-surface font-semibold mb-4">{t("subject.followerGrowth")}</h3>
+            <h3 className="text-xs font-medium font-semibold mb-4" style={{ color: "var(--si-text-primary)" }}>{t("subject.followerGrowth")}</h3>
             <FollowerChart data={activity} accentColor={accentColor} />
           </GlassCard>
           <GlassCard>
-            <h3 className="text-label-md text-on-surface font-semibold mb-4">{t("subject.activityFrequency")}</h3>
+            <h3 className="text-xs font-medium font-semibold mb-4" style={{ color: "var(--si-text-primary)" }}>{t("subject.activityFrequency")}</h3>
             <ActivityFrequencyChart data={activity} accentColor={accentColor} />
           </GlassCard>
         </Section>
@@ -218,9 +230,9 @@ export default function SubjectDetailPage() {
       {subject.platform === "youtube" && (
         <Section title={t("video.title")} className="mb-6">
           {videosLoading ? (
-            <p className="text-body-md text-on-surface-variant">{t("video.loading")}</p>
+            <p className="text-sm" style={{ color: "var(--si-text-secondary)" }}>{t("video.loading")}</p>
           ) : !videos || videos.length === 0 ? (
-            <p className="text-body-md text-on-surface-variant">{t("video.noVideos")}</p>
+            <p className="text-sm" style={{ color: "var(--si-text-secondary)" }}>{t("video.noVideos")}</p>
           ) : (
             <div className="space-y-2">
               {videos.map((video) => (
@@ -243,15 +255,15 @@ export default function SubjectDetailPage() {
                         />
                       )}
                       <div className="flex-1 min-w-0">
-                        <p className="text-body-md font-medium leading-tight line-clamp-2 text-on-surface">{video.title}</p>
-                        <p className="text-label-md text-on-surface-variant mt-1">
+                        <p className="text-sm font-medium leading-tight line-clamp-2" style={{ color: "var(--si-text-primary)" }}>{video.title}</p>
+                        <p className="text-xs mt-1" style={{ color: "var(--si-text-tertiary)" }}>
                           {t("video.views", { count: formatCompact(video.view_count) })} &middot; {formatRelative(video.published_at)}
                         </p>
                         <div className="flex gap-3 mt-1">
-                          <span className="text-label-sm text-on-surface-variant">
+                          <span className="text-xs" style={{ color: "var(--si-text-tertiary)" }}>
                             {t("video.likes", { count: formatCompact(video.like_count) })}
                           </span>
-                          <span className="text-label-sm text-on-surface-variant">
+                          <span className="text-xs" style={{ color: "var(--si-text-tertiary)" }}>
                             {t("video.comments", { count: formatCompact(video.comment_count) })}
                           </span>
                         </div>
@@ -293,12 +305,12 @@ export default function SubjectDetailPage() {
             {syncMutation.isPending ? t("subject.syncing") : t("subject.syncNow")}
           </Button>
           {syncMutation.isSuccess && (
-            <p className="text-label-sm text-center text-on-surface-variant mt-2" role="status">
+            <p className="text-xs text-center mt-2" style={{ color: "var(--si-text-tertiary)" }} role="status">
               {t("subject.syncScheduled", { taskId: syncMutation.data?.task_id?.slice(0, 8) ?? "" })}
             </p>
           )}
           {syncMutation.isError && (
-            <p className="text-label-sm text-center text-error mt-2" role="alert">
+            <p className="text-xs text-center mt-2" style={{ color: "var(--si-danger)" }} role="alert">
               {t("subject.syncFailed")}
             </p>
           )}

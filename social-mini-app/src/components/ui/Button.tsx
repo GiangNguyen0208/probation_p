@@ -39,14 +39,14 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref,
   ) => {
-    const bgColor = variant === "secondary"
-      ? "var(--tg-secondary-bg-color)"
-      : variant === "ghost"
-        ? "transparent"
-        : "var(--tg-button-color)";
-    const txtColor = variant === "primary"
-      ? "var(--tg-button-text-color)"
-      : "var(--tg-text-color)";
+    const bgColor =
+      variant === "secondary"
+        ? "var(--si-surface-elevated)"
+        : variant === "ghost"
+          ? "transparent"
+          : "var(--si-accent)";
+    const txtColor =
+      variant === "primary" ? "#ffffff" : "var(--si-text-primary)";
     return (
       <button
         ref={ref}

@@ -109,10 +109,10 @@ export default function CredentialListPage() {
 
       {!isLoading && !isError && credentials.length > 0 && (
         <section>
-          <div className="flex items-center gap-2 mb-3">
-            <h2 className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--si-text-secondary)" }}>
+          <div className="mb-3 px-1">
+            <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--si-text-tertiary)" }}>
               {t("credentials.activeCredentials")}
-            </h2>
+            </span>
           </div>
 
           <div className="flex flex-col gap-3">
@@ -138,7 +138,7 @@ export default function CredentialListPage() {
                         {initial}
                       </div>
                       <div className="min-w-0">
-                        <h3 className="text-sm font-bold truncate" style={{ color: "var(--si-text-primary)" }}>
+                        <h3 className="text-base font-semibold truncate" style={{ color: "var(--si-text-primary)" }}>
                           {cred.label}
                         </h3>
                         <p className="text-xs truncate" style={{ color: "var(--si-text-tertiary)" }}>
@@ -159,8 +159,8 @@ export default function CredentialListPage() {
       )}
 
       {!isLoading && !isError && credentials.length > 0 && (
-        <div className="fixed bottom-20 left-0 right-0 z-40 px-4 pointer-events-none">
-          <div className="max-w-[480px] mx-auto pointer-events-auto">
+        <div className="fixed bottom-16 left-0 right-0 z-40 px-4 pointer-events-none">
+          <div className="max-w-[480px] mx-auto pointer-events-auto pb-4">
             <Button
               fullWidth
               size="lg"

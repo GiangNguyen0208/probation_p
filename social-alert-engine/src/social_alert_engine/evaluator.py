@@ -95,19 +95,19 @@ def _load_subject_and_rules(subject_id: UUID) -> tuple[SubjectModel | None, list
     return subject, rules
 
 
-def _check_cooldown(rule_id: UUID) -> bool:
+def _check_cooldown(rule: AlertRuleModel) -> bool:
     factory = get_session_factory()
     with factory() as session:
         latest = session.execute(
             select(AlertLogModel.triggered_at)
-            .where(AlertLogModel.rule_id == rule_id)
+            .where(AlertLogModel.rule_id == rule.id)
             .order_by(AlertLogModel.triggered_at.desc())
             .limit(1)
         ).scalar_one_or_none()
     if latest is None:
         return False
     now = datetime.now(UTC)
-    return (now - latest).total_seconds() < 3600
+    return (now - latest).total_seconds() < rule.cooldown_seconds
 
 
 def _evaluate_follower_rules(
@@ -211,7 +211,7 @@ def _evaluate_status_change(
         if last_status_log:
             previous_status = _extract_previous_status(last_status_log, current_status)
         else:
-            previous_status = "active"
+            previous_status = current_status
 
         if current_status != previous_status:
             msg = _STATUS_CHANGE_MSG.format(
@@ -241,7 +241,7 @@ def _persist_and_notify(fired: list[FiredAlert], subject_id: UUID) -> int:
     factory = get_session_factory()
 
     for alert in fired:
-        if _check_cooldown(alert.rule.id):
+        if _check_cooldown(alert.rule):
             logger.info(
                 "evaluate.cooldown_active",
                 rule_id=str(alert.rule.id),

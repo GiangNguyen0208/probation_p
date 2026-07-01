@@ -1,0 +1,101 @@
+services:
+  gateway:
+    build:
+      context: .
+      dockerfile: social-api-gateway/Dockerfile
+    ports:
+      - "8000:8000"
+    env_file: .env
+    environment:
+      - ENVIRONMENT=production
+    restart: unless-stopped
+
+  collector-worker:
+    build:
+      context: .
+      dockerfile: social-data-collector/Dockerfile
+    command:
+      - celery
+      - -A
+      - social_data_collector.scheduler.celery_app
+      - worker
+      - -l
+      - info
+    env_file: .env
+    environment:
+      - ENVIRONMENT=production
+    restart: unless-stopped
+    depends_on:
+      gateway:
+        condition: service_started
+
+  collector-beat:
+    build:
+      context: .
+      dockerfile: social-data-collector/Dockerfile
+    command:
+      - celery
+      - -A
+      - social_data_collector.scheduler.celery_app
+      - beat
+      - -l
+      - info
+    env_file: .env
+    environment:
+      - ENVIRONMENT=production
+    restart: unless-stopped
+    depends_on:
+      collector-worker:
+        condition: service_started
+
+  alert-worker:
+    build:
+      context: .
+      dockerfile: social-alert-engine/Dockerfile
+    command:
+      - celery
+      - -A
+      - social_alert_engine.celery_app
+      - worker
+      - -l
+      - info
+    env_file: .env
+    environment:
+      - ENVIRONMENT=production
+    restart: unless-stopped
+    depends_on:
+      gateway:
+        condition: service_started
+
+  alert-beat:
+    build:
+      context: .
+      dockerfile: social-alert-engine/Dockerfile
+    command:
+      - celery
+      - -A
+      - social_alert_engine.celery_app
+      - beat
+      - -l
+      - info
+    env_file: .env
+    environment:
+      - ENVIRONMENT=production
+    restart: unless-stopped
+    depends_on:
+      alert-worker:
+        condition: service_started
+
+  mini-app:
+    build:
+      context: .
+      dockerfile: social-mini-app/Dockerfile
+      args:
+        VITE_API_BASE_URL: ""
+    ports:
+      - "80:80"
+    env_file: .env
+    restart: unless-stopped
+    depends_on:
+      gateway:
+        condition: service_started

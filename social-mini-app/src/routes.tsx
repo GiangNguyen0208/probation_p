@@ -7,7 +7,7 @@ import CredentialListPage from "./pages/CredentialListPage";
 import DashboardPage from "./pages/DashboardPage";
 import SettingsPage from "./pages/SettingsPage";
 import SubjectDetailPage from "./pages/SubjectDetailPage";
-import SubjectListPage from "./pages/SubjectListPage";
+import SubjectListPage from "./pages/SubjectList";
 
 function AdminGuard({ children }: { children: React.ReactNode }) {
   const { isAdmin, isLoading } = useAuth();
