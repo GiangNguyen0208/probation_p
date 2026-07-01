@@ -117,6 +117,9 @@ class FacebookNormalizer(BaseNormalizer):
         if not name:
             raise NormalizerError(f"Facebook page response missing 'name': {raw_response!r}")
 
+        picture = raw_response.get("picture", {})
+        avatar_url = picture.get("data", {}).get("url") if isinstance(picture, dict) else None
+
         # followers_count is the modern field; fan_count is the legacy one.
         followers = raw_response.get("followers_count")
         if followers is None:
@@ -139,6 +142,10 @@ class FacebookNormalizer(BaseNormalizer):
         else:
             status = SubjectStatus.ACTIVE
 
+        result_extended = dict(extended_data or {})
+        if avatar_url:
+            result_extended["avatar_url"] = avatar_url
+
         return Subject(
             platform=Platform.FACEBOOK,
             platform_id=str(page_id),
@@ -149,5 +156,5 @@ class FacebookNormalizer(BaseNormalizer):
             activity_frequency=activity_frequency,
             status=status,
             last_synced_at=synced_at,
-            extended_data=extended_data,
+            extended_data=result_extended or None,
         )

@@ -1,22 +1,27 @@
 export type TranslationKey =
   | "nav.subjects" | "nav.dashboard" | "nav.credentials" | "nav.settings"
-  | "settings.title" | "settings.appearance" | "settings.theme" | "settings.colorScheme"
+  | "settings.title" | "settings.appearance" | "settings.theme" | "settings.themeSystem" | "settings.themeLight" | "settings.themeDark" | "settings.colorScheme"
   | "settings.system" | "settings.light" | "settings.dark" | "settings.currentMode"
   | "settings.charts" | "settings.chartStyle" | "settings.defaultChart"
-  | "settings.lineChart" | "settings.barChart" | "settings.areaChart"
+  | "settings.lineChart" | "settings.chartLine" | "settings.barChart" | "settings.chartBar" | "settings.areaChart" | "settings.chartArea"
   | "settings.showGrid" | "settings.showGridDesc" | "settings.compactView" | "settings.compactViewDesc"
   | "settings.about" | "settings.version" | "settings.platform" | "settings.telegramMiniApp"
+  | "settings.releaseNotes" | "settings.profileTitle" | "settings.profileSubtitle"
   | "settings.language" | "settings.selectLanguage" | "settings.english" | "settings.vietnamese"
   | "settings.account" | "settings.loggedInAs" | "settings.logout" | "settings.authFallback"
   | "dashboard.title" | "dashboard.overview" | "dashboard.totalSubjects" | "dashboard.mostActive"
   | "dashboard.facebook" | "dashboard.youtube" | "dashboard.tiktok" | "dashboard.tracked" | "dashboard.lastSync"
-  | "dashboard.browseSubjects"
-  | "subjects.title" | "subjects.noResults" | "subjects.resetFilters"
+  | "dashboard.browseSubjects" | "dashboard.networkHealth" | "dashboard.systemActive" | "dashboard.live"
+  | "subjects.title" | "subjects.search" | "subjects.noResults" | "subjects.resetFilters"
+  | "subjects.platformAll" | "subjects.statusAll" | "subjects.statusActive" | "subjects.statusInactive" | "subjects.statusSuspended"
+  | "subjects.loaded"
   | "subject.metrics" | "subject.followers" | "subject.posts" | "subject.activity" | "subject.lastSync"
+  | "subject.followerGrowth" | "subject.activityFrequency"
   | "subject.alerts" | "subject.syncNow" | "subject.syncing" | "subject.syncScheduled" | "subject.syncFailed"
   | "subject.active" | "subject.inactive" | "subject.suspended"
   | "subject.loading" | "subject.error" | "subject.empty"
   | "credentials.title" | "credentials.createdSuccess" | "credentials.empty" | "credentials.add"
+  | "credentials.activeCredentials"
   | "credentials.newTitle" | "credentials.label" | "credentials.create" | "credentials.creating"
   | "credentials.edit" | "credentials.save" | "credentials.cancel"
   | "credentials.revoke" | "credentials.revoking" | "credentials.revokedStatus"
@@ -24,6 +29,7 @@ export type TranslationKey =
   | "credentials.platform" | "credentials.created" | "credentials.lastVerified"
   | "credentials.placeholderLabel"
   | "common.loading" | "common.error" | "common.retry" | "common.noData" | "common.previous" | "common.next"
+  | "common.search"
   | "filter.all" | "filter.platform" | "filter.status" | "filter.search" | "filter.searchPlaceholder"
   | "activity.followerGrowth" | "activity.frequency"
   | "video.title" | "video.noVideos" | "video.loading" | "video.views" | "video.likes" | "video.comments"
@@ -45,16 +51,19 @@ export type TranslationKey =
 export type Translations = Record<TranslationKey, string>;
 
 export const en: Translations = {
-  "nav.subjects": "Subjects",
-  "nav.dashboard": "Dashboard",
-  "nav.credentials": "Credentials",
-  "nav.settings": "Settings",
+  "nav.subjects": "Intelligence",
+  "nav.dashboard": "Dash",
+  "nav.credentials": "Secure",
+  "nav.settings": "Config",
 
   "settings.title": "Settings",
   "settings.appearance": "Appearance",
   "settings.theme": "Theme",
   "settings.colorScheme": "Color scheme",
   "settings.system": "System (Telegram)",
+  "settings.themeSystem": "System",
+  "settings.themeLight": "Light",
+  "settings.themeDark": "Dark",
   "settings.light": "Light",
   "settings.dark": "Dark",
   "settings.currentMode": "Current: {mode} mode",
@@ -62,8 +71,11 @@ export const en: Translations = {
   "settings.chartStyle": "Chart Style",
   "settings.defaultChart": "Default chart type",
   "settings.lineChart": "Line Chart",
+  "settings.chartLine": "Line",
   "settings.barChart": "Bar Chart",
+  "settings.chartBar": "Bar",
   "settings.areaChart": "Area Chart",
+  "settings.chartArea": "Area",
   "settings.showGrid": "Show grid lines",
   "settings.showGridDesc": "Display background grid in charts",
   "settings.compactView": "Compact view",
@@ -72,6 +84,9 @@ export const en: Translations = {
   "settings.version": "Version",
   "settings.platform": "Platform",
   "settings.telegramMiniApp": "Telegram Mini App",
+  "settings.releaseNotes": "Release Notes",
+  "settings.profileTitle": "User Profile",
+  "settings.profileSubtitle": "Premium Study Plan Active",
   "settings.language": "Language",
   "settings.selectLanguage": "Display language",
   "settings.english": "English",
@@ -91,10 +106,20 @@ export const en: Translations = {
   "dashboard.tracked": "{count} tracked",
   "dashboard.lastSync": "Last sync: {time}",
   "dashboard.browseSubjects": "Browse Subjects",
+  "dashboard.networkHealth": "Network Health",
+  "dashboard.systemActive": "System Active",
+  "dashboard.live": "Live",
 
   "subjects.title": "Subjects",
   "subjects.noResults": "No subjects found",
   "subjects.resetFilters": "Reset filters",
+  "subjects.search": "Search accounts...",
+  "subjects.platformAll": "Platform: All",
+  "subjects.statusAll": "Status: All",
+  "subjects.statusActive": "Active",
+  "subjects.statusInactive": "Inactive",
+  "subjects.statusSuspended": "Suspended",
+  "subjects.loaded": "{count} subjects loaded",
 
   "subject.metrics": "Metrics",
   "subject.followers": "Followers",
@@ -106,6 +131,8 @@ export const en: Translations = {
   "subject.syncing": "Syncing...",
   "subject.syncScheduled": "Sync scheduled (task: {taskId}...)",
   "subject.syncFailed": "Failed to trigger sync",
+  "subject.followerGrowth": "Follower Growth Trend",
+  "subject.activityFrequency": "Activity Frequency",
   "subject.active": "Active",
   "subject.inactive": "Inactive",
   "subject.suspended": "Suspended",
@@ -117,6 +144,7 @@ export const en: Translations = {
   "credentials.createdSuccess": "Credential created successfully",
   "credentials.empty": "No credentials yet",
   "credentials.add": "Add Credential",
+  "credentials.activeCredentials": "Your Active Credentials",
   "credentials.newTitle": "New Credential",
   "credentials.label": "Label",
   "credentials.create": "Create Credential",
@@ -138,6 +166,7 @@ export const en: Translations = {
   "common.loading": "Loading...",
   "common.error": "Something went wrong",
   "common.retry": "Retry",
+  "common.search": "Search...",
   "common.noData": "No data available",
   "common.previous": "Previous",
   "common.next": "Next",
@@ -206,16 +235,19 @@ export const en: Translations = {
 };
 
 export const vi: Translations = {
-  "nav.subjects": "Chủ đề",
+  "nav.subjects": "Thông tin",
   "nav.dashboard": "Tổng quan",
-  "nav.credentials": "Xác thực",
-  "nav.settings": "Cài đặt",
+  "nav.credentials": "Bảo mật",
+  "nav.settings": "Cấu hình",
 
   "settings.title": "Cài đặt",
   "settings.appearance": "Giao diện",
   "settings.theme": "Chủ đề",
   "settings.colorScheme": "Bảng màu",
   "settings.system": "Hệ thống (Telegram)",
+  "settings.themeSystem": "Hệ thống",
+  "settings.themeLight": "Sáng",
+  "settings.themeDark": "Tối",
   "settings.light": "Sáng",
   "settings.dark": "Tối",
   "settings.currentMode": "Hiện tại: {mode}",
@@ -223,8 +255,11 @@ export const vi: Translations = {
   "settings.chartStyle": "Kiểu biểu đồ",
   "settings.defaultChart": "Kiểu biểu đồ mặc định",
   "settings.lineChart": "Biểu đồ đường",
+  "settings.chartLine": "Đường",
   "settings.barChart": "Biểu đồ cột",
+  "settings.chartBar": "Cột",
   "settings.areaChart": "Biểu đồ vùng",
+  "settings.chartArea": "Vùng",
   "settings.showGrid": "Hiện lưới",
   "settings.showGridDesc": "Hiển thị lưới nền trong biểu đồ",
   "settings.compactView": "Xem gọn",
@@ -233,6 +268,9 @@ export const vi: Translations = {
   "settings.version": "Phiên bản",
   "settings.platform": "Nền tảng",
   "settings.telegramMiniApp": "Telegram Mini App",
+  "settings.releaseNotes": "Ghi chú phát hành",
+  "settings.profileTitle": "Hồ sơ người dùng",
+  "settings.profileSubtitle": "Gói Premium đang hoạt động",
   "settings.language": "Ngôn ngữ",
   "settings.selectLanguage": "Ngôn ngữ hiển thị",
   "settings.english": "English",
@@ -252,10 +290,20 @@ export const vi: Translations = {
   "dashboard.tracked": "{count} theo dõi",
   "dashboard.lastSync": "Đồng bộ: {time}",
   "dashboard.browseSubjects": "Xem chủ đề",
+  "dashboard.networkHealth": "Sức khỏe mạng",
+  "dashboard.systemActive": "Hệ thống đang hoạt động",
+  "dashboard.live": "Trực tiếp",
 
   "subjects.title": "Chủ đề",
   "subjects.noResults": "Không tìm thấy chủ đề",
   "subjects.resetFilters": "Đặt lại bộ lọc",
+  "subjects.search": "Tìm kiếm tài khoản...",
+  "subjects.platformAll": "Nền tảng: Tất cả",
+  "subjects.statusAll": "Trạng thái: Tất cả",
+  "subjects.statusActive": "Hoạt động",
+  "subjects.statusInactive": "Không hoạt động",
+  "subjects.statusSuspended": "Đã đình chỉ",
+  "subjects.loaded": "{count} chủ đề đã tải",
 
   "subject.metrics": "Chỉ số",
   "subject.followers": "Người theo dõi",
@@ -267,6 +315,8 @@ export const vi: Translations = {
   "subject.syncing": "Đang đồng bộ...",
   "subject.syncScheduled": "Đã lên lịch (tác vụ: {taskId}...)",
   "subject.syncFailed": "Đồng bộ thất bại",
+  "subject.followerGrowth": "Xu hướng tăng trưởng",
+  "subject.activityFrequency": "Tần suất hoạt động",
   "subject.active": "Hoạt động",
   "subject.inactive": "Không hoạt động",
   "subject.suspended": "Đã đình chỉ",
@@ -278,6 +328,7 @@ export const vi: Translations = {
   "credentials.createdSuccess": "Tạo xác thực thành công",
   "credentials.empty": "Chưa có xác thực nào",
   "credentials.add": "Thêm xác thực",
+  "credentials.activeCredentials": "Xác thực đang hoạt động",
   "credentials.newTitle": "Xác thực mới",
   "credentials.label": "Nhãn",
   "credentials.create": "Tạo xác thực",
@@ -299,6 +350,7 @@ export const vi: Translations = {
   "common.loading": "Đang tải...",
   "common.error": "Đã xảy ra lỗi",
   "common.retry": "Thử lại",
+  "common.search": "Tìm kiếm...",
   "common.noData": "Không có dữ liệu",
   "common.previous": "Trước",
   "common.next": "Sau",

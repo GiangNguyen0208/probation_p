@@ -18,7 +18,7 @@ from ..config import FacebookSettings
 from .base import BaseHTTPClient, RetryPolicy
 
 # Public Page fields the collector reads on every sync.
-DEFAULT_PAGE_FIELDS = "id,name,fan_count"
+DEFAULT_PAGE_FIELDS = "id,name,fan_count,picture"
 
 # Default number of recent posts to fetch for activity frequency derivation.
 DEFAULT_POSTS_LIMIT = 50

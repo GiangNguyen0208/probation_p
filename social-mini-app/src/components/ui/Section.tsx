@@ -3,12 +3,14 @@ import type { ReactNode } from "react";
 export function Section({
   title,
   children,
+  className = "",
 }: {
   title?: string;
   children?: ReactNode;
+  className?: string;
 }) {
   return (
-    <div className="flex flex-col gap-2">
+    <div className={`flex flex-col gap-2 ${className}`}>
       {title && (
         <h2
           className="text-sm font-semibold px-1"

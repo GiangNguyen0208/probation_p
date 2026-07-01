@@ -150,6 +150,13 @@ class YouTubeNormalizer(BaseNormalizer):
         channel_id = resource.get("id") or platform_id
         snippet = resource.get("snippet", {})
         title = snippet.get("title")
+
+        thumbnails = snippet.get("thumbnails", {})
+        avatar_url = (
+            thumbnails.get("high", {}).get("url")
+            or thumbnails.get("medium", {}).get("url")
+            or thumbnails.get("default", {}).get("url")
+        )
         if not title:
             raise NormalizerError(f"YouTube channel response missing snippet.title: {resource!r}")
 
@@ -179,6 +186,8 @@ class YouTubeNormalizer(BaseNormalizer):
             status = SubjectStatus.ACTIVE
 
         extended_data: dict[str, Any] = {}
+        if avatar_url:
+            extended_data["avatar_url"] = avatar_url
         if view_count:
             extended_data["view_count"] = view_count
 
