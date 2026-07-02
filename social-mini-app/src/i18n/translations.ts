@@ -43,6 +43,7 @@ export type TranslationKey =
   | "alert.followerDrop" | "alert.followerGrowthLabel" | "alert.activityDrop"
   | "insights.title" | "insights.impressions" | "insights.reach" | "insights.pageViews" | "insights.engagements"
   | "insights.reactions" | "insights.follows" | "insights.pageFans"
+  | "insights.videoViews" | "insights.totalActions" | "insights.dailyFollows" | "insights.unfollows"
   | "insights.viewsPerDay" | "insights.estMinutesWatched"
   | "insights.subscribersGained" | "insights.subscribersLost"
   | "insights.likes" | "insights.comments" | "insights.shares"
@@ -220,7 +221,11 @@ export const en: Translations = {
   "insights.pageViews": "Page Views",
   "insights.engagements": "Post Engagements",
   "insights.reactions": "Reactions",
+  "insights.videoViews": "Video Views",
+  "insights.totalActions": "Total Actions",
+  "insights.dailyFollows": "Daily Follows",
   "insights.follows": "New Follows",
+  "insights.unfollows": "Unfollows",
   "insights.pageFans": "Total Followers",
   "insights.viewsPerDay": "Views/Day",
   "insights.estMinutesWatched": "Watch Time (min)",
@@ -405,7 +410,11 @@ export const vi: Translations = {
   "insights.pageViews": "Lượt xem trang",
   "insights.engagements": "Tương tác bài",
   "insights.reactions": "Cảm xúc",
+  "insights.videoViews": "Lượt xem video",
+  "insights.totalActions": "Tổng hành động",
+  "insights.dailyFollows": "Theo dõi/ngày",
   "insights.follows": "Theo dõi mới",
+  "insights.unfollows": "Bỏ theo dõi",
   "insights.pageFans": "Tổng người theo dõi",
   "insights.viewsPerDay": "Lượt xem/Ngày",
   "insights.estMinutesWatched": "Thời gian xem (ph)",

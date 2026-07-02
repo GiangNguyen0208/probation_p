@@ -54,12 +54,16 @@ class FacebookSettings(BaseSettings):
     test_page_ids_raw: str = Field(default="", alias="test_page_ids")
 
     # Comma-separated list of insight metrics to fetch during sync.
-    # Requires pages_read_engagement + read_insights permissions.
+    # These are the modern metrics confirmed valid via probe; deprecated
+    # metrics (e.g. page_impressions, page_fans, page_engaged_users) are
+    # excluded because they return #100 "invalid insights metric".
     insight_metrics: str = (
         "page_media_view,page_total_media_view_unique,"
-        "page_actions_post_reactions_total,"
         "page_views_total,page_post_engagements,"
-        "page_follows,page_daily_follows_unique"
+        "page_follows,page_daily_follows,page_daily_follows_unique,"
+        "page_daily_unfollows_unique,"
+        "page_actions_post_reactions_total,"
+        "page_video_views,page_total_actions"
     )
 
     @property

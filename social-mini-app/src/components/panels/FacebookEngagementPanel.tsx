@@ -17,7 +17,11 @@ const DISPLAY_METRICS = [
   { key: "page_views_total", labelKey: "insights.pageViews" },
   { key: "page_post_engagements", labelKey: "insights.engagements" },
   { key: "page_actions_post_reactions_total", labelKey: "insights.reactions" },
+  { key: "page_video_views", labelKey: "insights.videoViews" },
+  { key: "page_total_actions", labelKey: "insights.totalActions" },
+  { key: "page_daily_follows", labelKey: "insights.dailyFollows" },
   { key: "page_daily_follows_unique", labelKey: "insights.follows" },
+  { key: "page_daily_unfollows_unique", labelKey: "insights.unfollows" },
   { key: "page_follows", labelKey: "insights.pageFans" },
 ] as const;
 
