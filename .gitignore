@@ -21,6 +21,7 @@ build/
 *.egg
 .eggs/
 *node_modules/
+*yarn.lock
 
 # Environment
 .env

@@ -32,5 +32,6 @@
     "tailwindcss": "^4.0.0",
     "typescript": "^5.5.0",
     "typescript-eslint": "^8.0.0"
-  }
+  },
+  "packageManager": "yarn@4.17.0"
 }

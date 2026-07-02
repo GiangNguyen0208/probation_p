@@ -15,7 +15,10 @@ from typing import Any
 from social_common.errors import PermanentPlatformError, SubjectNotFoundError
 
 from ..config import FacebookSettings
+from ..logging_setup import get_logger
 from .base import BaseHTTPClient, RetryPolicy
+
+logger = get_logger("social_data_collector.clients.facebook")
 
 # Public Page fields the collector reads on every sync.
 DEFAULT_PAGE_FIELDS = "id,name,fan_count,picture"
@@ -110,19 +113,46 @@ class FacebookClient(BaseHTTPClient):
         metrics: str = "page_impressions,page_engaged_users,page_fans",
         period: str = "day",
     ) -> list[dict[str, Any]]:
-        """Fetch Page insights (requires read_insights permission)."""
-        try:
-            response = self.get_json(
-                f"/{page_id}/insights",
-                params=self._auth_params(metric=metrics, period=period),
-            )
-            return list(response.get("data", []))
-        except PermanentPlatformError as exc:
-            # Insights often fail due to lack of read_insights permission on the token.
-            # We return empty list instead of crashing the sync.
-            if "403" in str(exc) or "400" in str(exc) or "Permissions error" in str(exc):
-                return []
-            raise
+        """Fetch Page insights (requires read_insights permission).
+
+        Calls each metric individually so that a single invalid or
+        deprecated metric does not fail the entire batch. Invalid
+        metrics are logged and skipped.
+        """
+        metric_list = [m.strip() for m in metrics.split(",") if m.strip()]
+        results: list[dict[str, Any]] = []
+        for metric in metric_list:
+            try:
+                response = self.get_json(
+                    f"/{page_id}/insights",
+                    params=self._auth_params(metric=metric, period=period),
+                )
+                results.extend(response.get("data", []))
+            except PermanentPlatformError as exc:
+                # Skip metrics that are invalid or not permitted for this page/period.
+                if (
+                    "nonexisting field" in str(exc)
+                    or "Permissions error" in str(exc)
+                    or "is not valid for" in str(exc)
+                ):
+                    logger.warning(
+                        "facebook.insight.metric_skipped",
+                        page_id=page_id,
+                        metric=metric,
+                        error=str(exc),
+                    )
+                    continue
+                # For blanket permission failures (e.g. no read_insights at all)
+                # return what we have rather than crashing the sync.
+                if "403" in str(exc) or "400" in str(exc):
+                    logger.warning(
+                        "facebook.insight.batch_failed",
+                        page_id=page_id,
+                        error=str(exc),
+                    )
+                    return results
+                raise
+        return results
 
     def get_post_comments(self, post_id: str, limit: int = 50) -> list[dict[str, Any]]:
         """Fetch comments on a specific post."""

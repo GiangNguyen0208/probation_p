@@ -1,17 +1,17 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useCredential, useRevokeCredential, useUpdateCredential, usePlatforms } from "../api/credential-hooks";
-import type { ConfigSchemaField } from "../api/admin-types";
-import { DynamicCredentialForm } from "../components/credentials/DynamicCredentialForm";
-import StateViews from "../components/state/StateViews";
-import { Badge } from "../components/ui/Badge";
-import { Button } from "../components/ui/Button";
-import { Card } from "../components/ui/Card";
-import { Input } from "../components/ui/Input";
-import { Section } from "../components/ui/Section";
-import { useTranslation } from "../i18n";
-import { useTelegram } from "../telegram/useTelegram";
-import { formatRelative } from "../utils/format";
+import { useCredential, useRevokeCredential, useUpdateCredential, usePlatforms } from "../../api/credential-hooks";
+import type { ConfigSchemaField } from "../../api/admin-types";
+import { DynamicCredentialForm } from "../../components/credentials/DynamicCredentialForm";
+import StateViews from "../../components/state/StateViews";
+import { Badge } from "../../components/ui/Badge";
+import { Button } from "../../components/ui/Button";
+import { Card } from "../../components/ui/Card";
+import { Input } from "../../components/ui/Input";
+import { Section } from "../../components/ui/Section";
+import { useTranslation } from "../../i18n";
+import { useTelegram } from "../../telegram/useTelegram";
+import { formatRelative } from "../../utils/format";
 
 export default function CredentialDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -77,7 +77,9 @@ export default function CredentialDetailPage() {
     );
   };
 
-  if (isLoading) return <StateViews.Loading count={2} />;
+  if (isLoading) {
+    return <StateViews.Loading count={2} />;
+  }
   if (isError) {
     return (
       <StateViews.Error
@@ -87,7 +89,9 @@ export default function CredentialDetailPage() {
       />
     );
   }
-  if (!credential) return <StateViews.Empty />;
+  if (!credential) {
+    return <StateViews.Empty />;
+  }
 
   const isRevoked = credential.status === "revoked" || !credential.is_active;
 

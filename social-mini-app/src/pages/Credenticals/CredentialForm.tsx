@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useCreateCredential, usePlatforms } from "../api/credential-hooks";
-import type { ConfigSchemaField } from "../api/admin-types";
-import { PlatformPicker } from "../components/credentials/PlatformPicker";
-import { DynamicCredentialForm } from "../components/credentials/DynamicCredentialForm";
-import { Button } from "../components/ui/Button";
-import { Input } from "../components/ui/Input";
-import { PageHeader } from "../components/ui/PageHeader";
-import { useTranslation } from "../i18n";
-import { useTelegram } from "../telegram/useTelegram";
+import { useCreateCredential, usePlatforms } from "../../api/credential-hooks";
+import type { ConfigSchemaField } from "../../api/admin-types";
+import { PlatformPicker } from "../../components/credentials/PlatformPicker";
+import { DynamicCredentialForm } from "../../components/credentials/DynamicCredentialForm";
+import { Button } from "../../components/ui/Button";
+import { Input } from "../../components/ui/Input";
+import { PageHeader } from "../../components/ui/PageHeader";
+import { useTranslation } from "../../i18n";
+import { useTelegram } from "../../telegram/useTelegram";
 
 export default function CredentialFormPage() {
   const navigate = useNavigate();

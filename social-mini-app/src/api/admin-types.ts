@@ -28,6 +28,7 @@ export interface Credential {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  avatar_url: string | null;
 }
 
 export interface CredentialDetail extends Credential {

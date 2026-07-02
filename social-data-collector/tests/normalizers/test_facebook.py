@@ -120,3 +120,39 @@ def test_normalize_assigns_uuid(facebook_page_fixture, facebook_posts_fixture):
     # (platform, platform_id), so the IDs being different in-memory is
     # expected.
     assert s1.id != s2.id
+
+
+def test_normalize_maps_extended_fields(facebook_posts_fixture):
+    page = {
+        "id": "999",
+        "name": "Rich Page",
+        "followers_count": 100,
+        "category": "Media",
+        "about": "About text",
+        "description": "Desc text",
+        "username": "richpage",
+        "website": "https://example.com",
+        "verification_status": "blue_verified",
+        "talking_about_count": 42,
+        "cover": {"source": "https://cover.jpg"},
+    }
+    normalizer = FacebookNormalizer()
+    subject = normalizer.normalize(
+        platform_id="999",
+        raw_response=page,
+        activity_data=facebook_posts_fixture["data"],
+        synced_at=SYNCELED_AT,
+        extended_data={"insights": {"views": 100}},
+    )
+    assert subject.extended_data is not None
+    ed = subject.extended_data
+    assert ed["category"] == "Media"
+    assert ed["about"] == "About text"
+    assert ed["description"] == "Desc text"
+    assert ed["username"] == "richpage"
+    assert ed["website"] == "https://example.com"
+    assert ed["verification_status"] == "blue_verified"
+    assert ed["talking_about_count"] == 42
+    assert ed["cover"] == {"source": "https://cover.jpg"}
+    # Caller-provided extended_data merged on top
+    assert ed["insights"] == {"views": 100}

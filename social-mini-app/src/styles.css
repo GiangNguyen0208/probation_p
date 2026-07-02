@@ -28,7 +28,7 @@
 *::after {
   box-sizing: border-box;
   margin: 0.1rem;
-  padding: 0;
+  padding: 0rem;
 }
 
 html {

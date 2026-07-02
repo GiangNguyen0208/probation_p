@@ -1,13 +1,13 @@
 import { Navigate, createBrowserRouter } from "react-router-dom";
 import { useAuth } from "./auth/useAuth";
 import { Layout } from "./navigation/Layout";
-import CredentialDetailPage from "./pages/CredentialDetailPage";
-import CredentialFormPage from "./pages/CredentialFormPage";
-import CredentialListPage from "./pages/CredentialListPage";
+import CredentialDetailPage from "./pages/Credenticals/CredentialDetail";
+import CredentialFormPage from "./pages/Credenticals/CredentialForm";
+import CredentialListPage from "./pages/Credenticals";
 import DashboardPage from "./pages/DashboardPage";
 import SettingsPage from "./pages/SettingsPage";
-import SubjectDetailPage from "./pages/SubjectDetailPage";
-import SubjectListPage from "./pages/SubjectList";
+import SubjectDetailPage from "./pages/Subjects/SubjectDetail";
+import SubjectListPage from "./pages/Subjects";
 
 function AdminGuard({ children }: { children: React.ReactNode }) {
   const { isAdmin, isLoading } = useAuth();

@@ -5,16 +5,16 @@ Telegram Mini App for the Social Intelligence Platform.
 ## Setup
 
 ```bash
-npm install
-npm run dev        # http://localhost:5173
+corepack enable && yarn install
+yarn dev        # http://localhost:5173
 ```
 
 ## Commands
 
 ```bash
-npm run lint       # ESLint (flat config)
-npm run typecheck  # tsc --noEmit
-npm run build      # typecheck + Vite build
+yarn lint          # ESLint (flat config)
+yarn typecheck     # tsc --noEmit
+yarn build         # typecheck + Vite build
 ```
 
 ## Environment

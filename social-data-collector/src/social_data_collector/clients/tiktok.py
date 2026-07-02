@@ -163,6 +163,7 @@ class TikTokClient:
         open_id: str,
         max_count: int = _MAX_VIDEO_PAGE_SIZE,
         cursor: int = 0,
+        overall_limit: int | None = None,
     ) -> list[dict[str, Any]]:
         """Fetch recent videos for a TikTok user.
 
@@ -174,23 +175,48 @@ class TikTokClient:
 
         TikTok caps ``max_count`` at 20 per request, so any larger
         value is clamped.
+
+        When ``overall_limit`` is provided, this method automatically
+        follows pagination via ``cursor`` / ``has_more`` until the limit
+        is reached or there are no more pages.
         """
         clamped = min(max_count, _MAX_VIDEO_PAGE_SIZE)
-        try:
-            body = self._request(
-                "POST",
-                "/video/list/",
-                params={"fields": _VIDEO_LIST_FIELDS},
-                json_body={"max_count": clamped, "cursor": cursor},
-            )
-        except PermanentPlatformError as exc:
-            logger.warning(
-                "tiktok.video_list_error",
-                open_id=open_id,
-                error=str(exc),
-            )
-            return []
+        all_videos: list[dict[str, Any]] = []
+        current_cursor = cursor
+        effective_limit = overall_limit
 
-        data = body.get("data", {})
-        videos = data.get("videos", [])
-        return cast("list[dict[str, Any]]", videos)
+        while True:
+            try:
+                body = self._request(
+                    "POST",
+                    "/video/list/",
+                    params={"fields": _VIDEO_LIST_FIELDS},
+                    json_body={"max_count": clamped, "cursor": current_cursor},
+                )
+            except PermanentPlatformError as exc:
+                logger.warning(
+                    "tiktok.video_list_error",
+                    open_id=open_id,
+                    error=str(exc),
+                )
+                return all_videos if all_videos else []
+
+            data = body.get("data", {})
+            videos = data.get("videos", [])
+            if not videos:
+                break
+            all_videos.extend(videos)
+
+            if effective_limit is not None and len(all_videos) >= effective_limit:
+                all_videos = all_videos[:effective_limit]
+                break
+
+            has_more = data.get("has_more")
+            if not has_more:
+                break
+            current_cursor = data.get("cursor", current_cursor)
+            # Defensive: prevent infinite loop if cursor does not advance.
+            if current_cursor == cursor and not videos:
+                break
+
+        return all_videos

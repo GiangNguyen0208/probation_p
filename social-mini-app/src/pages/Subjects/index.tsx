@@ -7,7 +7,7 @@ import { Spinner } from "../../components/ui/Spinner";
 import { useTranslation } from "../../i18n";
 import { useTelegram } from "../../telegram/useTelegram";
 import { formatCompact, formatRelative } from "../../utils/format";
-import { FilterChip } from "@/pages/SubjectList/FilterChip";
+import { FilterChip } from "@/pages/Subjects/FilterChip";
 
 const platformInitials: Record<string, string> = {
   facebook: "F",

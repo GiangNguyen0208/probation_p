@@ -142,9 +142,35 @@ class FacebookNormalizer(BaseNormalizer):
         else:
             status = SubjectStatus.ACTIVE
 
-        result_extended = dict(extended_data or {})
+        result_extended: dict[str, Any] = {}
         if avatar_url:
             result_extended["avatar_url"] = avatar_url
+
+        # Explicitly map known page profile fields for stable storage.
+        _profile_fields = [
+            "category",
+            "category_list",
+            "about",
+            "description",
+            "username",
+            "website",
+            "phone",
+            "link",
+            "verification_status",
+            "talking_about_count",
+            "overall_star_rating",
+            "rating_count",
+            "checkins",
+            "cover",
+        ]
+        for key in _profile_fields:
+            value = raw_response.get(key)
+            if value is not None:
+                result_extended[key] = value
+
+        # Merge caller-provided extended_data (insights, photos, videos) on top.
+        if extended_data:
+            result_extended.update(extended_data)
 
         return Subject(
             platform=Platform.FACEBOOK,

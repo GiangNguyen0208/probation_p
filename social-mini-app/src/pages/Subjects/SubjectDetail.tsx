@@ -1,22 +1,22 @@
 import { useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { useActivity, useSubject, useTriggerSync, useVideos } from "../api/hooks";
-import { ActivityFrequencyChart } from "../components/charts/ActivityFrequencyChart";
-import { AlertConfigPanel } from "../components/panels/AlertConfigPanel";
-import { AlertHistoryPanel } from "../components/panels/AlertHistoryPanel";
-import { FacebookEngagementPanel } from "../components/panels/FacebookEngagementPanel";
-import { FollowerChart } from "../components/charts/FollowerChart";
-import { TikTokEngagementPanel } from "../components/panels/TikTokEngagementPanel";
-import { YouTubeEngagementPanel } from "../components/panels/YouTubeEngagementPanel";
-import { GlassCard } from "../components/ui/GlassCard";
-import { StatusChip } from "../components/ui/StatusChip";
-import { Button } from "../components/ui/Button";
-import { Section } from "../components/ui/Section";
-import { PageHeader } from "../components/ui/PageHeader";
-import { useTelegram } from "../telegram/useTelegram";
-import { useTheme } from "../theme/ThemeProvider";
-import { useTranslation } from "../i18n";
-import { formatCompact, formatRelative } from "../utils/format";
+import { useActivity, useSubject, useTriggerSync, useVideos } from "../../api/hooks";
+import { ActivityFrequencyChart } from "../../components/charts/ActivityFrequencyChart";
+import { AlertConfigPanel } from "../../components/panels/AlertConfigPanel";
+import { AlertHistoryPanel } from "../../components/panels/AlertHistoryPanel";
+import { FacebookEngagementPanel } from "../../components/panels/FacebookEngagementPanel";
+import { FollowerChart } from "../../components/charts/FollowerChart";
+import { TikTokEngagementPanel } from "../../components/panels/TikTokEngagementPanel";
+import { YouTubeEngagementPanel } from "../../components/panels/YouTubeEngagementPanel";
+import { GlassCard } from "../../components/ui/GlassCard";
+import { StatusChip } from "../../components/ui/StatusChip";
+import { Button } from "../../components/ui/Button";
+import { Section } from "../../components/ui/Section";
+import { PageHeader } from "../../components/ui/PageHeader";
+import { useTelegram } from "../../telegram/useTelegram";
+import { useTheme } from "../../theme/ThemeProvider";
+import { useTranslation } from "../../i18n";
+import { formatCompact, formatRelative } from "../../utils/format";
 
 const platformColors: Record<string, string> = {
   facebook: "#1877f2",
@@ -170,7 +170,7 @@ export default function SubjectDetailPage() {
               </div>
               <p className="text-sm flex items-center gap-1 mt-0.5" style={{ color: "var(--si-text-secondary)" }}>
                 <span className="material-symbols-outlined text-[16px]">public</span>
-                {subject.platform === "facebook" ? "Facebook" : subject.platform === "youtube" ? "YouTube" : "TikTok"} &bull; ID: {subject.platform_id}
+                {subject.platform === "facebook" ? "Facebook" : subject.platform === "youtube" ? "YouTube" : "TikTok"} 
               </p>
             </div>
           </div>

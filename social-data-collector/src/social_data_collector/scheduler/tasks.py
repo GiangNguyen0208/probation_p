@@ -169,20 +169,6 @@ def sync_facebook_subject(page_id: str) -> dict[str, Any]:
                 "insights": insights,
                 "photos": photos,
                 "videos": videos,
-                "talking_about_count": raw_page.get("talking_about_count"),
-                "overall_star_rating": raw_page.get("overall_star_rating"),
-                "rating_count": raw_page.get("rating_count"),
-                "verification_status": raw_page.get("verification_status"),
-                "category": raw_page.get("category"),
-                "category_list": raw_page.get("category_list"),
-                "checkins": raw_page.get("checkins"),
-                "about": raw_page.get("about"),
-                "description": raw_page.get("description"),
-                "website": raw_page.get("website"),
-                "username": raw_page.get("username"),
-                "link": raw_page.get("link"),
-                "phone": raw_page.get("phone"),
-                "cover": raw_page.get("cover"),
             }
     except SubjectNotFoundError as exc:
         logger.error("sync.subject_not_found", platform="facebook", page_id=page_id, error=str(exc))
@@ -551,7 +537,11 @@ def sync_tiktok_subject(open_id: str) -> dict[str, Any]:
             retry_policy=retry_policy,
         ) as client:
             user_info = client.get_user_info(open_id)
-            videos = client.get_video_list(open_id, max_count=settings.sync.activity_sample_size)
+            videos = client.get_video_list(
+                open_id,
+                max_count=settings.sync.activity_sample_size,
+                overall_limit=100,
+            )
     except SubjectNotFoundError as exc:
         logger.error(
             "sync.subject_not_found", platform="tiktok", open_id=open_id, error=str(exc)

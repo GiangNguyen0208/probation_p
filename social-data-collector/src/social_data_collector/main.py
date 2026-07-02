@@ -12,7 +12,7 @@ import sys
 from collections.abc import Callable, Sequence
 from datetime import UTC, datetime
 from typing import Any
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import structlog
 from social_common.enums import Platform, SubjectStatus
@@ -22,7 +22,8 @@ from sqlalchemy.orm import Session
 from .config import get_settings
 from .health import run_health_check
 from .logging_setup import configure_logging, get_logger
-from .persistence.models import PlatformModel, SubjectModel
+from .persistence.credential_resolver import encrypt_credentials
+from .persistence.models import PlatformCredentialModel, PlatformModel, SubjectModel
 from .persistence.repository import run_in_transaction
 from .scheduler.tasks import (
     sync_all_facebook_subjects,
@@ -58,7 +59,17 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     subparsers.add_parser(
         "seed-platforms",
-        help="Seed the default platforms (Facebook, YouTube) into the platforms table.",
+        help="Seed the default platforms (Facebook, YouTube, TikTok) into the platforms table.",
+    )
+
+    store_cred = subparsers.add_parser(
+        "store-credential",
+        help="Encrypt and store a credential blob in platform_credentials.",
+    )
+    store_cred.add_argument("--platform-slug", required=True, help="Platform slug (e.g. tiktok)")
+    store_cred.add_argument("--label", required=True, help="Human-readable label")
+    store_cred.add_argument(
+        "--data", required=True, help='JSON object with credential fields (e.g. {"access_token":"..."})'
     )
 
     fb_one = subparsers.add_parser("sync-facebook-one", help="Sync a single Facebook Page by ID.")
@@ -175,6 +186,37 @@ def _handle_seed_platforms(logger: structlog.stdlib.BoundLogger) -> int:
                 },
             },
         },
+        {
+            "name": "TikTok",
+            "slug": "tiktok",
+            "auth_type": "oauth2",
+            "config_schema": {
+                "access_token": {
+                    "type": "string",
+                    "label": "TikTok Access Token",
+                    "required": True,
+                    "sensitive": True,
+                },
+                "refresh_token": {
+                    "type": "string",
+                    "label": "TikTok Refresh Token",
+                    "required": False,
+                    "sensitive": True,
+                },
+                "client_key": {
+                    "type": "string",
+                    "label": "TikTok Client Key",
+                    "required": False,
+                    "sensitive": False,
+                },
+                "client_secret": {
+                    "type": "string",
+                    "label": "TikTok Client Secret",
+                    "required": False,
+                    "sensitive": True,
+                },
+            },
+        },
     ]
 
     def _make_platform_seeder(data: dict[str, Any]) -> Callable[[Session], bool]:
@@ -240,6 +282,65 @@ def _handle_seed_subjects(logger: structlog.stdlib.BoundLogger) -> int:
     return 0
 
 
+def _handle_store_credential(
+    args: argparse.Namespace,
+    logger: structlog.stdlib.BoundLogger,
+) -> int:
+    """Encrypt and store a credential blob for a platform."""
+    try:
+        raw_data = json.loads(args.data)
+    except json.JSONDecodeError as exc:
+        print(f"Invalid JSON in --data: {exc}", file=sys.stderr)
+        return 1
+
+    if not isinstance(raw_data, dict):
+        print("--data must be a JSON object", file=sys.stderr)
+        return 1
+
+    try:
+        encrypted_blob = encrypt_credentials(raw_data)
+    except Exception as exc:  # noqa: BLE001
+        print(f"Encryption failed: {exc}", file=sys.stderr)
+        return 1
+
+    slug = args.platform_slug
+    label = args.label
+
+    def _work(session: Session) -> UUID:
+        platform = session.execute(
+            select(PlatformModel).where(PlatformModel.slug == slug)
+        ).scalar_one_or_none()
+        if platform is None:
+            raise ValueError(f"Platform '{slug}' not found. Run seed-platforms first.")
+
+        cred = PlatformCredentialModel(
+            id=uuid4(),
+            platform_id=platform.id,
+            label=label,
+            credentials=encrypted_blob,
+            status="active",
+            is_active=True,
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
+        )
+        session.add(cred)
+        session.commit()
+        return cred.id
+
+    try:
+        cred_id = run_in_transaction(_work)
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    except Exception as exc:  # noqa: BLE001
+        print(f"Database error: {exc}", file=sys.stderr)
+        return 1
+
+    print(f"Credential stored: {cred_id}")
+    logger.info("credential.stored", credential_id=str(cred_id), platform_slug=slug, label=label)
+    return 0
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     settings = get_settings()
     configure_logging(settings.runtime.log_level)
@@ -276,6 +377,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return _handle_seed_subjects(logger)
     if command == "seed-platforms":
         return _handle_seed_platforms(logger)
+    if command == "store-credential":
+        return _handle_store_credential(args, logger)
 
     parser.error(f"Unknown command: {command}")
     return 2  # unreachable

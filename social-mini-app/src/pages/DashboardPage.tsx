@@ -113,7 +113,7 @@ export default function DashboardPage() {
             <div className="grid grid-cols-6 gap-3">
               {/* Total Subjects */}
               <GlassCard className="col-span-3 p-4">
-                <p className="text-xs font-medium" style={{ color: "var(--si-text-tertiary)" }}>{t("dashboard.totalSubjects")}</p>
+                <p className="text-xs font-medium pl-2" style={{ color: "var(--si-text-tertiary)" }}>{t("dashboard.totalSubjects")}</p>
                 <div className="flex items-baseline gap-2 mt-1">
                   <span className="text-2xl font-bold" style={{ color: "var(--si-accent)" }}>
                     {formatCompact(data.totalSubjects)}
@@ -129,7 +129,7 @@ export default function DashboardPage() {
 
               {/* Active Channel */}
               <GlassCard className="col-span-3 p-4">
-                <p className="text-xs font-medium" style={{ color: "var(--si-text-tertiary)" }}>Active Channel</p>
+                <p className="text-xs font-medium pl-2" style={{ color: "var(--si-text-tertiary)" }}>Active Channel</p>
                 <div className="font-semibold text-xl mt-1" style={{ color: "var(--si-text-primary)" }}>
                   {data.mostActivePlatform === "facebook" ? "Facebook" : data.mostActivePlatform === "youtube" ? "YouTube" : "TikTok"}
                 </div>
@@ -146,7 +146,7 @@ export default function DashboardPage() {
                   border: "1px solid var(--si-border)",
                 }}
               >
-                <p className="text-xs font-medium" style={{ color: "var(--si-text-tertiary)" }}>Meta</p>
+                <p className="text-xs font-medium pl-2" style={{ color: "var(--si-text-tertiary)" }}>Meta</p>
                 <span className="text-xl font-bold mt-1 block" style={{ color: "var(--si-text-primary)" }}>
                   {data.facebookCount}
                 </span>
@@ -160,7 +160,7 @@ export default function DashboardPage() {
                   border: "1px solid var(--si-border)",
                 }}
               >
-                <p className="text-xs font-medium" style={{ color: "var(--si-text-tertiary)" }}>Youtube</p>
+                <p className="text-xs font-medium pl-2" style={{ color: "var(--si-text-tertiary)" }}>Youtube</p>
                 <span className="text-xl font-bold mt-1 block" style={{ color: "var(--si-text-primary)" }}>
                   {data.youtubeCount}
                 </span>

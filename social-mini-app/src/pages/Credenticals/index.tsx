@@ -1,11 +1,11 @@
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useCredentials } from "../api/credential-hooks";
-import { GlassCard } from "../components/ui/GlassCard";
-import { StatusChip } from "../components/ui/StatusChip";
-import { Button } from "../components/ui/Button";
-import { useTranslation } from "../i18n";
-import { useTelegram } from "../telegram/useTelegram";
-import { formatRelative } from "../utils/format";
+import { useCredentials } from "../../api/credential-hooks";
+import { GlassCard } from "../../components/ui/GlassCard";
+import { StatusChip } from "../../components/ui/StatusChip";
+import { Button } from "../../components/ui/Button";
+import { useTranslation } from "../../i18n";
+import { useTelegram } from "../../telegram/useTelegram";
+import { formatRelative } from "../../utils/format";
 
 const platformColors: Record<string, string> = {
   facebook: "#1877f2",

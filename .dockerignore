@@ -16,3 +16,4 @@ celerybeat-schedule*
 .venv/
 tests/
 scripts/
+yarn.lock

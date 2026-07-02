@@ -47,6 +47,18 @@ def _decrypt(encrypted: dict[str, Any]) -> dict[str, Any]:
         raise CredentialResolutionError("Failed to decrypt credentials") from exc
 
 
+def encrypt_credentials(data: dict[str, Any]) -> dict[str, Any]:
+    """Encrypt a credentials dict and return the storage blob.
+
+    The returned dict has the shape ``{"_encrypted": "<fernet-token>"}``
+    and is what should be stored in the ``credentials`` JSONB column.
+    """
+    fernet = _get_fernet()
+    payload = json.dumps(data).encode()
+    token = fernet.encrypt(payload).decode()
+    return {"_encrypted": token}
+
+
 def resolve_credential(credential_id: UUID) -> dict[str, Any] | None:
     """Look up a credential by ID, decrypt it, and return the decrypted dict.
 

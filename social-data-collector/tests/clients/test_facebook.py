@@ -92,3 +92,51 @@ def test_client_requires_credentials():
     )
     with pytest.raises(PermanentPlatformError):
         FacebookClient(settings, _retry())
+
+
+def test_get_page_insights_per_metric_skips_invalid():
+    settings = _settings()
+    with respx.mock(base_url="https://graph.facebook.com/v25.0") as mock:
+        # metric A succeeds
+        mock.get("/1234567890/insights", params={"metric": "page_views_total", "period": "day", "access_token": "test_token"}).mock(
+            return_value=httpx.Response(200, json={"data": [{"name": "page_views_total", "values": [{"value": 100}]}]})
+        )
+        # metric B fails with invalid metric
+        mock.get("/1234567890/insights", params={"metric": "page_bad_metric", "period": "day", "access_token": "test_token"}).mock(
+            return_value=httpx.Response(400, json={"error": {"message": "nonexisting field page_bad_metric"}})
+        )
+        # metric C succeeds
+        mock.get("/1234567890/insights", params={"metric": "page_follows", "period": "day", "access_token": "test_token"}).mock(
+            return_value=httpx.Response(200, json={"data": [{"name": "page_follows", "values": [{"value": 50}]}]})
+        )
+        with FacebookClient(settings, _retry()) as client:
+            result = client.get_page_insights(
+                "1234567890",
+                metrics="page_views_total,page_bad_metric,page_follows",
+                period="day",
+            )
+        assert len(result) == 2
+        names = {r["name"] for r in result}
+        assert names == {"page_views_total", "page_follows"}
+
+
+def test_get_page_insights_returns_partial_on_blanket_403():
+    settings = _settings()
+    with respx.mock(base_url="https://graph.facebook.com/v25.0") as mock:
+        # first metric succeeds
+        mock.get("/1234567890/insights", params={"metric": "page_views_total", "period": "day", "access_token": "test_token"}).mock(
+            return_value=httpx.Response(200, json={"data": [{"name": "page_views_total", "values": [{"value": 100}]}]})
+        )
+        # second metric triggers blanket 403 (no read_insights permission)
+        mock.get("/1234567890/insights", params={"metric": "page_follows", "period": "day", "access_token": "test_token"}).mock(
+            return_value=httpx.Response(403, json={"error": {"message": "Permissions error"}})
+        )
+        with FacebookClient(settings, _retry()) as client:
+            result = client.get_page_insights(
+                "1234567890",
+                metrics="page_views_total,page_follows",
+                period="day",
+            )
+        # Should return partial results instead of crashing
+        assert len(result) == 1
+        assert result[0]["name"] == "page_views_total"
